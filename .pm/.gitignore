@@ -1,0 +1,32 @@
+# .pm/.gitignore
+# ===============
+# Runtime files that should NOT be committed.
+# data.json and config.toml ARE tracked (not listed here = tracked).
+
+# SQLite database (local performance — use data.json for git sync)
+# Binary files cannot be merged by git. Two developers editing work items
+# independently produces an unresolvable binary conflict.
+data.db
+
+# Negate root .gitignore's *.json pattern if one exists
+!data.json
+
+# Installed binaries (downloaded via install.sh or built locally)
+bin/
+
+# SQLite WAL/SHM runtime files (recreated automatically on server start)
+*.db-wal
+*.db-shm
+
+# Server discovery file (ephemeral — changes every server start)
+server.json
+
+# Process lock file (prevents duplicate server instances)
+server.lock
+
+# Server log files
+logs/
+log/
+
+# Tauri desktop runtime data
+tauri/

@@ -1,0 +1,38 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo lock file (uncomment if this is a library crate)
+# Cargo.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude local settings (user-specific)
+.claude/settings.local.json
+
+# OS-specific files
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Debug files
+*.log
+*.tmp
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+tarpaulin-report.html
+cobertura.xml
+*.profraw
+*.profdata

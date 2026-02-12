@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.pm/bin/pm:*)",
+      "WebFetch(domain:crates.io)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.rs)",
+      "Bash(python:*)",
+      "Bash(cd \"D:\\git\\auto-scribe\" && .pm/bin/pm:*)"
+    ]
+  }
+}
