@@ -10,6 +10,7 @@
 #   PM_CB_FAILURE_THRESHOLD=10 overrides [circuit_breaker].failure_threshold
 #   PM_RETRY_MAX_ATTEMPTS=5    overrides [retry].max_attempts
 #   PM_HANDLER_TIMEOUT_SECS=60 overrides [handler].timeout_secs
+#   PM_VALIDATION_MAX_COMMENT_LENGTH=10000 overrides [validation].max_comment_length
 
 # =============================================================================
 # Server Configuration
@@ -196,7 +197,7 @@ max_title_length = 200
 
 # Maximum length for work item descriptions (range: 0-100000, default: 10000)
 # Large enough for detailed specs, small enough to prevent abuse
-max_description_length = 10000
+max_description_length = 150000
 
 # Maximum story points allowed (range: 0-1000, default: 100)
 # Prevents typos like entering 100000 instead of 10
@@ -205,3 +206,11 @@ max_story_points = 100
 # Maximum length for error messages returned to clients (range: 50-1000, default: 200)
 # Prevents leaking stack traces while allowing useful error messages
 max_error_message_length = 200
+
+# Maximum length for comment content (range: 1-50000, default: 5000)
+# Allows detailed comments while preventing abuse
+max_comment_length = 150000
+
+# Maximum length for sprint names (range: 1-500, default: 100)
+# Sprint names should be concise identifiers
+max_sprint_name_length = 100

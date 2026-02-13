@@ -50,6 +50,21 @@ Identify strengths/weaknesses/issues and re-grade x.x/10 for production-grade
 - The tasks should also be written with well thought out explanations above each code block to give humans well structured context 
 ```
 
+```text
+- use the /pm skill to list all orphaned WorkItems
+- Find PONE-3
+- Address the review in the latest comment
+- use the /pro-rust skill to align with my preferred patterns
+```
+
+
+```text
+- use the /pm skill to list all orphaned WorkItems
+- Find PONE-3
+- Review all descendant tasks.
+- Write the review as a comment on PONE-3
+```
+
 ### Sub-Process
 ```text
 - Read `docs/session-plans/121-Session-Plan-Initial.md`
