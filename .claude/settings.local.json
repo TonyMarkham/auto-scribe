@@ -7,7 +7,11 @@
       "WebSearch",
       "WebFetch(domain:docs.rs)",
       "Bash(python:*)",
-      "Bash(cd \"D:\\git\\auto-scribe\" && .pm/bin/pm:*)"
+      "Bash(cd \"D:\\git\\auto-scribe\" && .pm/bin/pm:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)"
     ]
   }
 }

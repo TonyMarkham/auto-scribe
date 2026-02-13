@@ -14,9 +14,6 @@
 *~
 .DS_Store
 
-# Claude local settings (user-specific)
-.claude/settings.local.json
-
 # OS-specific files
 Thumbs.db
 .AppleDouble
