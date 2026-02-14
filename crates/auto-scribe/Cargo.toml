@@ -11,7 +11,6 @@ workspace = true
 
 [dependencies]
 arboard = { workspace = true }
-core-foundation = { workspace = true }
 directories = { workspace = true }
 enigo = { workspace = true }
 error-location = { workspace = true }
@@ -29,3 +28,6 @@ tray-icon = { workspace = true }
 uuid = { workspace = true }
 
 auto-scribe-core = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = { workspace = true }

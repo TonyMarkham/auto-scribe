@@ -22,20 +22,21 @@ use uuid::Uuid;
 
 /// Global hotkey handler with recording state machine.
 pub struct HotkeyHandler {
-    #[allow(dead_code)]
-    manager: GlobalHotKeyManager,
     hotkey_id: u32,
     state: Arc<Mutex<RecordingState>>,
     command_tx: mpsc::Sender<AppCommand>,
 }
 
 impl HotkeyHandler {
-    /// Create a new hotkey handler.
+    /// Register CTRL+SHIFT+Space as the global hotkey.
     ///
-    /// Registers CTRL+SHIFT+Space as the global hotkey.
+    /// Must be called on a thread with a message pump (e.g. the main thread
+    /// running a `tao`/`winit` event loop) so that `WM_HOTKEY` messages are
+    /// dispatched on Windows. The returned [`GlobalHotKeyManager`] must be
+    /// kept alive on that thread for the hotkey to remain registered.
     #[track_caller]
-    #[instrument(skip(command_tx))]
-    pub fn new(command_tx: mpsc::Sender<AppCommand>) -> AppResult<Self> {
+    #[instrument]
+    pub fn register_hotkey() -> AppResult<(GlobalHotKeyManager, u32)> {
         let manager =
             GlobalHotKeyManager::new().map_err(|e| AppError::HotkeyRegistrationFailed {
                 reason: format!("Failed to create manager: {}", e),
@@ -53,12 +54,20 @@ impl HotkeyHandler {
 
         info!(hotkey = "CTRL+SHIFT+Space", "Global hotkey registered");
 
-        Ok(Self {
-            manager,
-            hotkey_id: hotkey.id(),
+        Ok((manager, hotkey.id()))
+    }
+
+    /// Create a handler for a previously registered hotkey.
+    ///
+    /// The `hotkey_id` should come from [`register_hotkey`]. This struct is
+    /// `Send` and can live on any thread — it only listens on the global
+    /// [`GlobalHotKeyEvent`] channel.
+    pub fn new(hotkey_id: u32, command_tx: mpsc::Sender<AppCommand>) -> Self {
+        Self {
+            hotkey_id,
             state: Arc::new(Mutex::new(RecordingState::Idle)),
             command_tx,
-        })
+        }
     }
 
     /// Run the hotkey handler event loop.

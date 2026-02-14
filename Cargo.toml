@@ -28,7 +28,6 @@ missing_docs = "warn"
 audioadapter-buffers = { version = "2.0.0" }
 axum = { version = "0.8.8", features = ["ws"] }
 arboard = { version = "3.6.1" }
-core-foundation = { version = "0.10.1" }
 cpal = { version = "0.17.1" }
 directories = { version = "6.0.0" }
 enigo = { version = "0.6.1" }
@@ -53,3 +52,6 @@ uuid = { version = "1.20.0", features = ["v4", "serde"] }
 whisper-rs = { version = "0.15.1" }
 
 auto-scribe-core = { path = "crates/auto-scribe-core" }
+
+[workspace.dependencies.core-foundation]
+version = "0.10.1"
