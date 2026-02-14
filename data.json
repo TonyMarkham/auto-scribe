@@ -353,7 +353,7 @@
       "id": "6d614279-f293-4c4e-85f8-f11fa493278a"
     }
   ],
-  "exported_at": "2026-02-13T03:24:24.045852100+00:00",
+  "exported_at": "2026-02-14T04:30:06.167242+00:00",
   "exported_by": "pm-server",
   "projects": [
     {
@@ -389,12 +389,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Core STT Library",
-      "updated_at": 1770905677,
+      "updated_at": 1771015530,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -410,12 +410,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Foundation - Error Handling &amp; Crate Structure",
-      "updated_at": 1770905698,
+      "updated_at": 1771010798,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -431,12 +431,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Binary Error Handling &amp; Configuration",
-      "updated_at": 1770905722,
+      "updated_at": 1771019517,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -473,18 +473,18 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Update root Cargo.toml with workspace dependencies",
-      "updated_at": 1770946533,
+      "updated_at": 1771010378,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 3
+      "version": 5
     },
     {
       "assignee_id": null,
       "created_at": 1770905867,
       "created_by": "00000000-0000-0000-0000-000000000001",
-      "description": "Create global hotkey handler with state machine and graceful shutdown.\n\n**File**: `crates/auto-scribe/src/hotkey.rs`\n\n```rust\nuse std::sync::Arc;\nuse std::time::{Duration, Instant};\nuse std::panic::Location;\n\nuse global_hotkey::{GlobalHotKeyManager, hotkey::{HotKey, Modifiers, Code}, GlobalHotKeyEvent};\nuse tokio::sync::{mpsc, Mutex, watch};\nuse tracing::{info, debug, warn, error, instrument};\nuse uuid::Uuid;\n\nuse error_location::ErrorLocation;\nuse crate::error::{AppError, Result};\n\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum RecordingState {\n    Idle,\n    Recording {\n        started_at: Instant,\n        session_id: Uuid,\n    },\n}\n\n#[derive(Debug, Clone)]\npub enum AppCommand {\n    StartRecording { session_id: Uuid },\n    StopRecording { session_id: Uuid },\n    Shutdown,\n}\n\npub struct HotkeyHandler {\n    manager: GlobalHotKeyManager,\n    hotkey_id: u32,\n    state: Arc&amp;lt;Mutex&amp;lt;RecordingState&amp;gt;&amp;gt;,\n    command_tx: mpsc::Sender&amp;lt;AppCommand&amp;gt;,\n}\n\nimpl HotkeyHandler {\n    #[track_caller]\n    #[instrument(skip(command_tx))]\n    pub fn new(command_tx: mpsc::Sender&amp;lt;AppCommand&amp;gt;) -&amp;gt; Result&amp;lt;Self&amp;gt; {\n        let manager = GlobalHotKeyManager::new()\n            .map_err(|e| AppError::HotkeyRegistrationFailed {\n                reason: format!(&quot;Failed to create manager: {}&quot;, e),\n                location: ErrorLocation::from(Location::caller()),\n            })?;\n\n        let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::Space);\n\n        manager.register(hotkey)\n            .map_err(|e| AppError::HotkeyRegistrationFailed {\n                reason: format!(&quot;Failed to register CTRL+SHIFT+Space: {}&quot;, e),\n                location: ErrorLocation::from(Location::caller()),\n            })?;\n\n        info!(hotkey = &quot;CTRL+SHIFT+Space&quot;, &quot;Global hotkey registered&quot;);\n\n        Ok(Self {\n            manager,\n            hotkey_id: hotkey.id(),\n            state: Arc::new(Mutex::new(RecordingState::Idle)),\n            command_tx,\n        })\n    }\n\n    #[instrument(skip(self))]\n    pub async fn run(&amp;self, mut shutdown_rx: watch::Receiver&amp;lt;bool&amp;gt;) -&amp;gt; Result&amp;lt;()&amp;gt; {\n        let receiver = GlobalHotKeyEvent::receiver().clone();\n        let (event_tx, mut event_rx) = mpsc::channel(32);\n\n        // Single persistent blocking task that forwards hotkey events.\n        // GlobalHotKeyEvent::receiver() returns a crossbeam_channel::Receiver\n        // which has blocking recv() -- zero polling, instant response, one thread.\n        //\n        // Shutdown: when event_rx is dropped (loop breaks), the next\n        // event_tx.blocking_send() fails, breaking the blocking loop.\n        // The JoinHandle is awaited with a timeout after the main loop exits.\n        let handle = tokio::task::spawn_blocking(move || {\n            loop {\n                match receiver.recv() {\n                    Ok(event) =&amp;gt; {\n                        if event_tx.blocking_send(event).is_err() {\n                            break; // Async receiver dropped, shutting down\n                        }\n                    }\n                    Err(_) =&amp;gt; break, // Channel disconnected\n                }\n            }\n        });\n\n        loop {\n            tokio::select! {\n                _ = shutdown_rx.changed() =&amp;gt; {\n                    info!(&quot;Hotkey handler shutting down&quot;);\n                    break;\n                }\n                Some(event) = event_rx.recv() =&amp;gt; {\n                    if event.id == self.hotkey_id {\n                        self.handle_hotkey_press().await?;\n                    }\n                }\n            }\n        }\n\n        // Drop event_rx to unblock the blocking task&#x27;s next blocking_send().\n        // The task will break out of its loop when blocking_send returns Err.\n        drop(event_rx);\n\n        // Best-effort join: the blocking task may be stuck in recv() if no\n        // hotkey event arrives after shutdown. Use a timeout to avoid hanging.\n        // The task is cleaned up by the runtime on process exit regardless.\n        match tokio::time::timeout(Duration::from_secs(1), handle).await {\n            Ok(Ok(())) =&amp;gt; debug!(&quot;Hotkey event forwarder stopped cleanly&quot;),\n            Ok(Err(e)) =&amp;gt; warn!(error = ?e, &quot;Hotkey event forwarder task panicked&quot;),\n            Err(_) =&amp;gt; debug!(\n                &quot;Hotkey event forwarder did not stop within timeout, \\\n                 will be cleaned up on exit&quot;\n            ),\n        }\n\n        Ok(())\n    }\n\n    #[instrument(skip(self))]\n    async fn handle_hotkey_press(&amp;self) -&amp;gt; Result&amp;lt;()&amp;gt; {\n        let mut state = self.state.lock().await;\n\n        match *state {\n            RecordingState::Idle =&amp;gt; {\n                let session_id = Uuid::new_v4();\n\n                // Send command FIRST -- if this fails, state remains Idle.\n                // This prevents the app from being stuck in Recording state\n                // with no command sent (e.g., if the channel is full or closed).\n                self.command_tx.send(AppCommand::StartRecording { session_id })\n                    .await\n                    .map_err(|e| AppError::ChannelSendFailed {\n                        message: format!(&quot;Failed to send StartRecording: {}&quot;, e),\n                        location: ErrorLocation::from(Location::caller()),\n                    })?;\n\n                // Only update state AFTER command sent successfully\n                *state = RecordingState::Recording {\n                    started_at: Instant::now(),\n                    session_id,\n                };\n\n                info!(session_id = %session_id, &quot;Recording started&quot;);\n            }\n            RecordingState::Recording { started_at, session_id } =&amp;gt; {\n                let duration = started_at.elapsed();\n\n                // Send command FIRST -- if this fails, state remains Recording.\n                // The user can retry by pressing the hotkey again.\n                self.command_tx.send(AppCommand::StopRecording { session_id })\n                    .await\n                    .map_err(|e| AppError::ChannelSendFailed {\n                        message: format!(&quot;Failed to send StopRecording: {}&quot;, e),\n                        location: ErrorLocation::from(Location::caller()),\n                    })?;\n\n                // Only update state AFTER command sent successfully\n                *state = RecordingState::Idle;\n\n                info!(\n                    session_id = %session_id,\n                    duration_ms = duration.as_millis(),\n                    &quot;Recording stopped&quot;\n                );\n            }\n        }\n\n        Ok(())\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use std::sync::Arc;\n    use std::time::Instant;\n\n    use tokio::sync::{mpsc, Mutex};\n    use uuid::Uuid;\n\n    use crate::hotkey::{AppCommand, RecordingState};\n\n    /// WHAT: State remains Idle when command channel is closed\n    /// WHY: Prevents inconsistent state when channel send fails\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_closed_channel_when_starting_recording_then_state_unchanged() {\n        // Given: A closed command channel and Idle state\n        let (command_tx, command_rx) = mpsc::channel(1);\n        drop(command_rx);\n        let state = Arc::new(Mutex::new(RecordingState::Idle));\n\n        // When: Attempting to send StartRecording\n        let session_id = Uuid::new_v4();\n        let result = command_tx.send(AppCommand::StartRecording { session_id }).await;\n\n        // Then: Send fails and state remains Idle\n        assert!(result.is_err());\n        assert_eq!(*state.lock().await, RecordingState::Idle);\n    }\n\n    /// WHAT: State transitions to Recording after successful command send\n    /// WHY: Ensures state only changes when command is delivered\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_idle_state_when_command_sent_successfully_then_transitions_to_recording() {\n        // Given: An open command channel and Idle state\n        let (command_tx, mut command_rx) = mpsc::channel(32);\n        let state = Arc::new(Mutex::new(RecordingState::Idle));\n\n        // When: Sending StartRecording succeeds\n        let session_id = Uuid::new_v4();\n        command_tx.send(AppCommand::StartRecording { session_id }).await.unwrap();\n\n        // Then: Command is received and state can transition\n        let cmd = command_rx.recv().await.unwrap();\n        assert!(matches!(cmd, AppCommand::StartRecording { .. }));\n\n        *state.lock().await = RecordingState::Recording {\n            started_at: Instant::now(),\n            session_id,\n        };\n        assert!(matches!(*state.lock().await, RecordingState::Recording { .. }));\n    }\n\n    /// WHAT: State returns to Idle after successful stop command\n    /// WHY: Ensures toggle behavior completes the full cycle\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_recording_state_when_stop_sent_successfully_then_returns_to_idle() {\n        // Given: An open command channel and Recording state\n        let (command_tx, mut command_rx) = mpsc::channel(32);\n        let session_id = Uuid::new_v4();\n        let state = Arc::new(Mutex::new(RecordingState::Recording {\n            started_at: Instant::now(),\n            session_id,\n        }));\n\n        // When: Sending StopRecording succeeds\n        command_tx.send(AppCommand::StopRecording { session_id }).await.unwrap();\n\n        // Then: Command is received\n        let cmd = command_rx.recv().await.unwrap();\n        assert!(matches!(cmd, AppCommand::StopRecording { .. }));\n\n        *state.lock().await = RecordingState::Idle;\n        assert_eq!(*state.lock().await, RecordingState::Idle);\n    }\n}\n```\n\n**Key production patterns**:\n- Arc&amp;lt;Mutex&amp;lt;T&amp;gt;&amp;gt; for shared mutable state (tokio::sync::Mutex, NOT std)\n- tokio::select! for graceful shutdown\n- watch::channel for shutdown signal broadcast\n- **ONE persistent spawn_blocking task** -- spawns a single thread that loops with blocking `recv()` and forwards events via mpsc channel. NOT one spawn_blocking per event (wasteful)\n- **JoinHandle stored and awaited** with timeout on shutdown -- prevents leaked tasks\n- **State updated AFTER command sent** -- prevents inconsistent state if channel send fails (REVIEW FIX v4)\n- Zero polling, instant response, minimal CPU usage\n- Structured logging with session_id correlation\n- #[instrument] on all public methods\n- #[track_caller] on constructor\n- No unwrap/expect (workspace lints enforce this)\n\n**REVIEW FIXES (v1 -&amp;gt; v2)**:\n1. Replaced 10ms polling loop (`tokio::time::sleep` + `try_recv`) with `tokio::task::spawn_blocking(|| receiver.recv())` -- zero CPU waste, instant response\n2. Added proper error handling for recv() failure and task panic\n\n**REVIEW FIXES (v2 -&amp;gt; v3 -- Gordon Ramsay Plan Review #2)**:\n1. **MEDIUM**: Replaced per-event `spawn_blocking` with ONE persistent blocking task that loops. Previous pattern spawned a new thread pool task for every single hotkey event. New pattern: single `spawn_blocking` with `loop { receiver.recv() }` forwarding events via mpsc. One thread, zero waste.\n2. Documented shutdown behavior: dropping `event_rx` causes `blocking_send` to fail, breaking the loop\n\n**REVIEW FIXES (v3 -&amp;gt; v4 -- Gordon Ramsay Plan Review #4)**:\n1. **CRITICAL**: Fixed state management bug -- state was updated BEFORE command was sent. If `command_tx.send()` failed (channel full/closed), state changed to Recording but no StartRecording command was delivered, leaving the app stuck. Now sends command FIRST, then updates state only on success. Same fix applied to StopRecording path.\n2. **MEDIUM**: Stored spawn_blocking JoinHandle and added best-effort join with 1-second timeout on shutdown. Previously the handle was dropped, leaking the task. The timeout handles the case where the blocking task is stuck in `recv()` waiting for the next hotkey event.\n3. **TESTING**: Added state machine tests following /pro-rust given/when/then pattern -- tests that closed channel leaves state unchanged, successful send transitions state, and stop returns to Idle.",
+      "description": "Create global hotkey handler with state machine and graceful shutdown.\n\n**File**: `crates/auto-scribe/src/hotkey.rs`\n\n```rust\nuse std::sync::Arc;\nuse std::time::{Duration, Instant};\nuse std::panic::Location;\n\nuse global_hotkey::{GlobalHotKeyManager, hotkey::{HotKey, Modifiers, Code}, GlobalHotKeyEvent};\nuse tokio::sync::{mpsc, Mutex, watch};\nuse tracing::{info, debug, warn, error, instrument};\nuse uuid::Uuid;\n\nuse error_location::ErrorLocation;\nuse crate::error::{AppError, Result};\n\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum RecordingState {\n    Idle,\n    Recording {\n        started_at: Instant,\n        session_id: Uuid,\n    },\n}\n\n#[derive(Debug, Clone)]\npub enum AppCommand {\n    StartRecording { session_id: Uuid },\n    StopRecording { session_id: Uuid },\n    Shutdown,\n}\n\npub struct HotkeyHandler {\n    manager: GlobalHotKeyManager,\n    hotkey_id: u32,\n    state: Arc<Mutex<RecordingState>>,\n    command_tx: mpsc::Sender<AppCommand>,\n}\n\nimpl HotkeyHandler {\n    #[track_caller]\n    #[instrument(skip(command_tx))]\n    pub fn new(command_tx: mpsc::Sender<AppCommand>) -> Result<Self> {\n        let manager = GlobalHotKeyManager::new()\n            .map_err(|e| AppError::HotkeyRegistrationFailed {\n                reason: format!(\"Failed to create manager: {}\", e),\n                location: ErrorLocation::from(Location::caller()),\n            })?;\n\n        let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::Space);\n\n        manager.register(hotkey)\n            .map_err(|e| AppError::HotkeyRegistrationFailed {\n                reason: format!(\"Failed to register CTRL+SHIFT+Space: {}\", e),\n                location: ErrorLocation::from(Location::caller()),\n            })?;\n\n        info!(hotkey = \"CTRL+SHIFT+Space\", \"Global hotkey registered\");\n\n        Ok(Self {\n            manager,\n            hotkey_id: hotkey.id(),\n            state: Arc::new(Mutex::new(RecordingState::Idle)),\n            command_tx,\n        })\n    }\n\n    #[instrument(skip(self))]\n    pub async fn run(&self, mut shutdown_rx: watch::Receiver<bool>) -> Result<()> {\n        let receiver = GlobalHotKeyEvent::receiver().clone();\n        let (event_tx, mut event_rx) = mpsc::channel(32);\n\n        // Single persistent blocking task that forwards hotkey events.\n        // GlobalHotKeyEvent::receiver() returns a crossbeam_channel::Receiver\n        // which has blocking recv() -- zero polling, instant response, one thread.\n        //\n        // Shutdown: when event_rx is dropped (loop breaks), the next\n        // event_tx.blocking_send() fails, breaking the blocking loop.\n        // The JoinHandle is awaited with a timeout after the main loop exits.\n        let handle = tokio::task::spawn_blocking(move || {\n            loop {\n                match receiver.recv() {\n                    Ok(event) => {\n                        if event_tx.blocking_send(event).is_err() {\n                            break; // Async receiver dropped, shutting down\n                        }\n                    }\n                    Err(_) => break, // Channel disconnected\n                }\n            }\n        });\n\n        loop {\n            tokio::select! {\n                _ = shutdown_rx.changed() => {\n                    info!(\"Hotkey handler shutting down\");\n                    break;\n                }\n                Some(event) = event_rx.recv() => {\n                    if event.id == self.hotkey_id {\n                        self.handle_hotkey_press().await?;\n                    }\n                }\n            }\n        }\n\n        // Drop event_rx to unblock the blocking task's next blocking_send().\n        // The task will break out of its loop when blocking_send returns Err.\n        drop(event_rx);\n\n        // Best-effort join: the blocking task may be stuck in recv() if no\n        // hotkey event arrives after shutdown. Use a timeout to avoid hanging.\n        // The task is cleaned up by the runtime on process exit regardless.\n        match tokio::time::timeout(Duration::from_secs(1), handle).await {\n            Ok(Ok(())) => debug!(\"Hotkey event forwarder stopped cleanly\"),\n            Ok(Err(e)) => warn!(error = ?e, \"Hotkey event forwarder task panicked\"),\n            Err(_) => debug!(\n                \"Hotkey event forwarder did not stop within timeout, \\\n                 will be cleaned up on exit\"\n            ),\n        }\n\n        Ok(())\n    }\n\n    #[instrument(skip(self))]\n    async fn handle_hotkey_press(&self) -> Result<()> {\n        let mut state = self.state.lock().await;\n\n        match *state {\n            RecordingState::Idle => {\n                let session_id = Uuid::new_v4();\n\n                // Send command FIRST -- if this fails, state remains Idle.\n                // This prevents the app from being stuck in Recording state\n                // with no command sent (e.g., if the channel is full or closed).\n                self.command_tx.send(AppCommand::StartRecording { session_id })\n                    .await\n                    .map_err(|e| AppError::ChannelSendFailed {\n                        message: format!(\"Failed to send StartRecording: {}\", e),\n                        location: ErrorLocation::from(Location::caller()),\n                    })?;\n\n                // Only update state AFTER command sent successfully\n                *state = RecordingState::Recording {\n                    started_at: Instant::now(),\n                    session_id,\n                };\n\n                info!(session_id = %session_id, \"Recording started\");\n            }\n            RecordingState::Recording { started_at, session_id } => {\n                let duration = started_at.elapsed();\n\n                // Send command FIRST -- if this fails, state remains Recording.\n                // The user can retry by pressing the hotkey again.\n                self.command_tx.send(AppCommand::StopRecording { session_id })\n                    .await\n                    .map_err(|e| AppError::ChannelSendFailed {\n                        message: format!(\"Failed to send StopRecording: {}\", e),\n                        location: ErrorLocation::from(Location::caller()),\n                    })?;\n\n                // Only update state AFTER command sent successfully\n                *state = RecordingState::Idle;\n\n                info!(\n                    session_id = %session_id,\n                    duration_ms = duration.as_millis(),\n                    \"Recording stopped\"\n                );\n            }\n        }\n\n        Ok(())\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use std::sync::Arc;\n    use std::time::Instant;\n\n    use tokio::sync::{mpsc, Mutex};\n    use uuid::Uuid;\n\n    use crate::hotkey::{AppCommand, RecordingState};\n\n    /// WHAT: State remains Idle when command channel is closed\n    /// WHY: Prevents inconsistent state when channel send fails\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_closed_channel_when_starting_recording_then_state_unchanged() {\n        // Given: A closed command channel and Idle state\n        let (command_tx, command_rx) = mpsc::channel(1);\n        drop(command_rx);\n        let state = Arc::new(Mutex::new(RecordingState::Idle));\n\n        // When: Attempting to send StartRecording\n        let session_id = Uuid::new_v4();\n        let result = command_tx.send(AppCommand::StartRecording { session_id }).await;\n\n        // Then: Send fails and state remains Idle\n        assert!(result.is_err());\n        assert_eq!(*state.lock().await, RecordingState::Idle);\n    }\n\n    /// WHAT: State transitions to Recording after successful command send\n    /// WHY: Ensures state only changes when command is delivered\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_idle_state_when_command_sent_successfully_then_transitions_to_recording() {\n        // Given: An open command channel and Idle state\n        let (command_tx, mut command_rx) = mpsc::channel(32);\n        let state = Arc::new(Mutex::new(RecordingState::Idle));\n\n        // When: Sending StartRecording succeeds\n        let session_id = Uuid::new_v4();\n        command_tx.send(AppCommand::StartRecording { session_id }).await.unwrap();\n\n        // Then: Command is received and state can transition\n        let cmd = command_rx.recv().await.unwrap();\n        assert!(matches!(cmd, AppCommand::StartRecording { .. }));\n\n        *state.lock().await = RecordingState::Recording {\n            started_at: Instant::now(),\n            session_id,\n        };\n        assert!(matches!(*state.lock().await, RecordingState::Recording { .. }));\n    }\n\n    /// WHAT: State returns to Idle after successful stop command\n    /// WHY: Ensures toggle behavior completes the full cycle\n    #[tokio::test]\n    #[allow(clippy::unwrap_used)]\n    async fn given_recording_state_when_stop_sent_successfully_then_returns_to_idle() {\n        // Given: An open command channel and Recording state\n        let (command_tx, mut command_rx) = mpsc::channel(32);\n        let session_id = Uuid::new_v4();\n        let state = Arc::new(Mutex::new(RecordingState::Recording {\n            started_at: Instant::now(),\n            session_id,\n        }));\n\n        // When: Sending StopRecording succeeds\n        command_tx.send(AppCommand::StopRecording { session_id }).await.unwrap();\n\n        // Then: Command is received\n        let cmd = command_rx.recv().await.unwrap();\n        assert!(matches!(cmd, AppCommand::StopRecording { .. }));\n\n        *state.lock().await = RecordingState::Idle;\n        assert_eq!(*state.lock().await, RecordingState::Idle);\n    }\n}\n```\n\n**Key production patterns**:\n- Arc<Mutex<T>> for shared mutable state (tokio::sync::Mutex, NOT std)\n- tokio::select! for graceful shutdown\n- watch::channel for shutdown signal broadcast\n- **ONE persistent spawn_blocking task** -- spawns a single thread that loops with blocking `recv()` and forwards events via mpsc channel. NOT one spawn_blocking per event (wasteful)\n- **JoinHandle stored and awaited** with timeout on shutdown -- prevents leaked tasks\n- **State updated AFTER command sent** -- prevents inconsistent state if channel send fails (REVIEW FIX v4)\n- Zero polling, instant response, minimal CPU usage\n- Structured logging with session_id correlation\n- #[instrument] on all public methods\n- #[track_caller] on constructor\n- No unwrap/expect (workspace lints enforce this)\n\n**REVIEW FIXES (v1 -> v2)**:\n1. Replaced 10ms polling loop (`tokio::time::sleep` + `try_recv`) with `tokio::task::spawn_blocking(|| receiver.recv())` -- zero CPU waste, instant response\n2. Added proper error handling for recv() failure and task panic\n\n**REVIEW FIXES (v2 -> v3 -- Gordon Ramsay Plan Review #2)**:\n1. **MEDIUM**: Replaced per-event `spawn_blocking` with ONE persistent blocking task that loops. Previous pattern spawned a new thread pool task for every single hotkey event. New pattern: single `spawn_blocking` with `loop { receiver.recv() }` forwarding events via mpsc. One thread, zero waste.\n2. Documented shutdown behavior: dropping `event_rx` causes `blocking_send` to fail, breaking the loop\n\n**REVIEW FIXES (v3 -> v4 -- Gordon Ramsay Plan Review #4)**:\n1. **CRITICAL**: Fixed state management bug -- state was updated BEFORE command was sent. If `command_tx.send()` failed (channel full/closed), state changed to Recording but no StartRecording command was delivered, leaving the app stuck. Now sends command FIRST, then updates state only on success. Same fix applied to StopRecording path.\n2. **MEDIUM**: Stored spawn_blocking JoinHandle and added best-effort join with 1-second timeout on shutdown. Previously the handle was dropped, leaking the task. The timeout handles the case where the blocking task is stuck in `recv()` waiting for the next hotkey event.\n3. **TESTING**: Added state machine tests following /pro-rust given/when/then pattern -- tests that closed channel leaves state unchanged, successful send transitions state, and stop returns to Idle.",
       "display_key": "PONE-18",
       "id": "3510bfb4-4e34-433d-a4bc-dca5abee48c4",
       "item_number": 18,
@@ -494,12 +494,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement HotkeyHandler with production-grade async patterns",
-      "updated_at": 1770950147,
+      "updated_at": 1771020348,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 5
+      "version": 8
     },
     {
       "assignee_id": null,
@@ -515,12 +515,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement AudioCapturer with CPAL",
-      "updated_at": 1770949575,
+      "updated_at": 1771011683,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 5
+      "version": 7
     },
     {
       "assignee_id": null,
@@ -536,12 +536,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement AudioManager orchestrator",
-      "updated_at": 1770949579,
+      "updated_at": 1771015464,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 4
+      "version": 6
     },
     {
       "assignee_id": null,
@@ -557,12 +557,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement AppError enum for binary-level errors",
-      "updated_at": 1770941964,
+      "updated_at": 1771019407,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 2
+      "version": 4
     },
     {
       "assignee_id": null,
@@ -578,12 +578,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement OutputHandler for clipboard and auto-paste",
-      "updated_at": 1770950149,
+      "updated_at": 1771021617,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 6
+      "version": 8
     },
     {
       "assignee_id": null,
@@ -683,12 +683,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement system tray icon with state-based updates",
-      "updated_at": 1770946493,
+      "updated_at": 1771022697,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 2
+      "version": 4
     },
     {
       "assignee_id": null,
@@ -704,12 +704,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement App struct and event loop",
-      "updated_at": 1770950151,
+      "updated_at": 1771023633,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 13
+      "version": 15
     },
     {
       "assignee_id": null,
@@ -725,12 +725,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Binary Application - System Tray &amp; Hotkeys",
-      "updated_at": 1770905682,
+      "updated_at": 1771023658,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -746,12 +746,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Audio Capture Components (CPAL + Rubato + Whisper)",
-      "updated_at": 1770905706,
+      "updated_at": 1771013895,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -767,12 +767,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Hotkey Handler &amp; Recording State",
-      "updated_at": 1770905729,
+      "updated_at": 1771020357,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -809,12 +809,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement AudioError enum with location tracking",
-      "updated_at": 1770905811,
+      "updated_at": 1771010789,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -830,12 +830,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement Resampler using Rubato",
-      "updated_at": 1770947900,
+      "updated_at": 1771012948,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 4
+      "version": 6
     },
     {
       "assignee_id": null,
@@ -851,12 +851,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Create auto-scribe-core lib.rs with public API exports",
-      "updated_at": 1770906037,
+      "updated_at": 1771015472,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -872,12 +872,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement Config struct with TOML loading",
-      "updated_at": 1770943381,
+      "updated_at": 1771019479,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 3
+      "version": 5
     },
     {
       "assignee_id": null,
@@ -914,12 +914,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement recording lifecycle methods",
-      "updated_at": 1770944543,
+      "updated_at": 1771023634,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -998,12 +998,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "AudioManager Orchestrator &amp; Library API",
-      "updated_at": 1770905713,
+      "updated_at": 1771015479,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -1019,12 +1019,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Output Handler (Clipboard + Auto-Paste)",
-      "updated_at": 1770905736,
+      "updated_at": 1771021618,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -1061,12 +1061,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement SttEngine using whisper-rs",
-      "updated_at": 1770949577,
+      "updated_at": 1771013893,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 3
+      "version": 5
     },
     {
       "assignee_id": null,
@@ -1082,12 +1082,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement transcription spawn and tray event handling",
-      "updated_at": 1770944555,
+      "updated_at": 1771023635,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -1124,12 +1124,12 @@
       "priority": "high",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "System Tray UI &amp; Icon States",
-      "updated_at": 1770905743,
+      "updated_at": 1771022698,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -1166,12 +1166,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Implement main() entry point",
-      "updated_at": 1770944564,
+      "updated_at": 1771023635,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     },
     {
       "assignee_id": null,
@@ -1187,12 +1187,12 @@
       "priority": "critical",
       "project_id": "63aca871-3284-4bd4-9b52-54e747139f78",
       "sprint_id": null,
-      "status": "backlog",
+      "status": "review",
       "story_points": null,
       "title": "Main Application &amp; Event Loop",
-      "updated_at": 1770905750,
+      "updated_at": 1771023649,
       "updated_by": "00000000-0000-0000-0000-000000000001",
-      "version": 1
+      "version": 3
     }
   ]
 }
