@@ -7,15 +7,14 @@
 //! ```no_run
 //! use auto_scribe_core::{AudioManager, CoreResult};
 //!
-//! use std::path::PathBuf;
-//! use std::time::Duration;
+//! use std::{path::PathBuf, thread::sleep, time::Duration};
 //!
 //! fn main() -> CoreResult<()> {
 //!     let model_path = PathBuf::from("models/ggml-base.en.bin");
-//!     let mut manager = AudioManager::new(&model_path)?;
+//!     let mut manager = AudioManager::new(&model_path, true)?;
 //!
 //!     manager.start_recording()?;
-//!     std::thread::sleep(Duration::from_secs(3));
+//!     sleep(Duration::from_secs(3));
 //!     let transcription = manager.stop_recording()?;
 //!
 //!     println!("Transcribed: {}", transcription);

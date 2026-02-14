@@ -17,6 +17,25 @@ A cross-platform desktop speech-to-text application using local, offline Whisper
 - A Whisper GGML model file (e.g., `ggml-base.en.bin`) - download from [whisper.cpp models](https://huggingface.co/ggerganov/whisper.cpp)
 - **macOS only**: Accessibility permissions for auto-paste (System Settings > Privacy & Security > Accessibility)
 
+### GPU Acceleration (Optional)
+
+GPU inference is enabled automatically per platform (Metal on macOS, Vulkan on Windows). To compile with GPU support on Windows, you need the Vulkan SDK:
+
+1. Download and install the [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows)
+2. The installer sets the `VULKAN_SDK` environment variable automatically
+3. Restart your terminal so the new environment variable is picked up
+4. Verify with: `echo %VULKAN_SDK%` (cmd) or `$env:VULKAN_SDK` (PowerShell)
+
+If the Vulkan SDK is not installed, the build will fail with: `Please install Vulkan SDK and ensure that VULKAN_SDK env variable is set`
+
+On **macOS**, Metal support requires no additional setup — Xcode provides everything needed.
+
+GPU usage can be toggled at runtime in `config.toml`:
+```toml
+[whisper]
+use_gpu = true   # Set to false to force CPU inference
+```
+
 ## Installation
 
 ```bash
@@ -91,6 +110,7 @@ Configuration is stored as TOML and created automatically on first run:
 ```toml
 [whisper]
 model_path = "/path/to/models/ggml-base.en.bin"
+use_gpu = true  # Requires Metal (macOS) or Vulkan SDK (Windows) at compile time
 
 [audio]
 # selected_device = "Device Name"  # Optional, defaults to system default
@@ -114,7 +134,7 @@ Audio capture (CPAL), resampling (Rubato, 48kHz to 16kHz), and transcription (wh
 
 System tray app using tao for the event loop, tray-icon for the tray, global-hotkey for hotkey detection, arboard for clipboard, and enigo for keyboard simulation.
 
-The tao event loop runs on the main thread (required because `TrayIcon` is `!Send`). A tokio async runtime runs on a separate thread for hotkey handling, recording, and transcription. The two communicate via `std::sync::mpsc` channels.
+The tao event loop runs on the main thread (required because `TrayIcon` is `!Send`). A tokio async runtime runs on a separate thread for hotkey handling, recording, and transcription. The two communicate via tao's `EventLoopProxy` for tray updates.
 
 ## Development
 

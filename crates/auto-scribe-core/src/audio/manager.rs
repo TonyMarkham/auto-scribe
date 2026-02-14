@@ -45,9 +45,9 @@ impl AudioManager {
     /// Returns error if no audio device found or model file doesn't exist.
     #[track_caller]
     #[instrument(skip(model_path))]
-    pub fn new<P: AsRef<Path>>(model_path: P) -> CoreResult<Self> {
+    pub fn new<P: AsRef<Path>>(model_path: P, use_gpu: bool) -> CoreResult<Self> {
         let capturer = AudioCapturer::new()?;
-        let engine = SttEngine::new(model_path)?;
+        let engine = SttEngine::new(model_path, use_gpu)?;
 
         info!("AudioManager initialized");
 

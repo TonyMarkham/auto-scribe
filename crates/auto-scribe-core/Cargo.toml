@@ -11,6 +11,8 @@ workspace = true
 
 [features]
 integration-tests = []
+metal = ["whisper-rs/metal"]
+vulkan = ["whisper-rs/vulkan"]
 
 [dependencies]
 audioadapter-buffers = { workspace = true }

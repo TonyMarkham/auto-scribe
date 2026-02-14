@@ -21,10 +21,13 @@ use tracing::{debug, info, instrument, warn};
 pub struct Config {
     /// Whisper model configuration.
     pub whisper: WhisperConfig,
+
     /// Audio device configuration.
     pub audio: AudioConfig,
+
     /// Application behavior settings.
     pub behavior: BehaviourConfig,
+
     /// Embedded web server configuration.
     pub server: ServerConfig,
 }
@@ -171,6 +174,7 @@ impl Config {
         let config = Config {
             whisper: WhisperConfig {
                 model_path: model_path.clone(),
+                use_gpu: true,
             },
             audio: AudioConfig {
                 selected_device: None,

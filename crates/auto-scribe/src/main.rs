@@ -92,13 +92,14 @@ fn main() {
                     std::process::exit(1);
                 }
 
-                let audio_manager = match AudioManager::new(&config.whisper.model_path) {
-                    Ok(am) => Arc::new(Mutex::new(am)),
-                    Err(e) => {
-                        error!("Failed to create AudioManager: {:?}", e);
-                        std::process::exit(1);
-                    }
-                };
+                let audio_manager =
+                    match AudioManager::new(&config.whisper.model_path, config.whisper.use_gpu) {
+                        Ok(am) => Arc::new(Mutex::new(am)),
+                        Err(e) => {
+                            error!("Failed to create AudioManager: {:?}", e);
+                            std::process::exit(1);
+                        }
+                    };
 
                 let output_handler = match OutputHandler::new() {
                     Ok(oh) => Arc::new(Mutex::new(oh)),

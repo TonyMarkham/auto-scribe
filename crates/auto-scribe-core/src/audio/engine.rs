@@ -13,7 +13,7 @@ pub struct SttEngine {
 impl SttEngine {
     #[track_caller]
     #[instrument(skip(model_path))]
-    pub fn new<P: AsRef<Path>>(model_path: P) -> CoreResult<Self> {
+    pub fn new<P: AsRef<Path>>(model_path: P, use_gpu: bool) -> CoreResult<Self> {
         let path = model_path.as_ref();
 
         if !path.exists() {
@@ -23,12 +23,15 @@ impl SttEngine {
             });
         }
 
+        let mut params = WhisperContextParameters::default();
+        params.use_gpu(use_gpu);
+
         let ctx = WhisperContext::new_with_params(
             path.to_str().ok_or(AudioError::ModelNotFound {
                 path: path.to_path_buf(),
                 location: ErrorLocation::from(Location::caller()),
             })?,
-            WhisperContextParameters::default(),
+            params,
         )
         .map_err(|e| AudioError::TranscriptionFailed {
             source: Box::new(e),
