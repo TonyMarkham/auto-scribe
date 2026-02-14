@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::panic)]
 
-mod audio;
+mod hotkey;
+mod output_handler;

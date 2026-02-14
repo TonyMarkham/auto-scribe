@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 fn given_buffer_at_max_capacity_when_adding_samples_then_oldest_discarded() {
     // Given: A VecDeque at max capacity filled with 0.0
     let mut buf = VecDeque::with_capacity(MAX_BUFFER_SAMPLES);
-    buf.extend(std::iter::repeat(0.0f32).take(MAX_BUFFER_SAMPLES));
+    buf.extend(std::iter::repeat_n(0.0f32, MAX_BUFFER_SAMPLES));
     assert_eq!(buf.len(), MAX_BUFFER_SAMPLES);
 
     // When: Adding 1024 new samples (value 1.0) beyond the limit
@@ -61,7 +61,7 @@ fn given_concurrent_writers_when_writing_to_buffer_then_no_corruption() {
         handles.push(std::thread::spawn(move || {
             for _ in 0..1000 {
                 let mut b = buf_clone.lock().unwrap_or_else(|e| e.into_inner());
-                b.extend(std::iter::repeat(f32::from(i)).take(48));
+                b.extend(std::iter::repeat_n(f32::from(i), 48));
                 while b.len() > MAX_BUFFER_SAMPLES {
                     b.pop_front();
                 }

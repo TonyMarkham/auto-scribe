@@ -1,6 +1,3 @@
-#![allow(clippy::unwrap_used)]
-#![allow(clippy::panic)]
-
 //! Auto-scribe Core Library
 //!
 //! Production-grade speech-to-text library using CPAL, Rubato, and Whisper.

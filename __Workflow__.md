@@ -15,26 +15,33 @@ Use Cluade Code's Panning Mode and allow it to create and itterate on the origin
 ### Review
 ```text
 - use the /pm skill to list all orphaned WorkItems
-- Find PONE-1
+- Find PONE-2
 - Review all descendant tasks.
-- Write the review as a comment on PONE-1
+- Write the review as a comment on PONE-2
 ```
 
 ### Address Review
 ```text
 - use the /pm skill to list all orphaned WorkItems
-- Find PONE-1
+- Find PONE-2
 - Address the review in the latest comment
 - use the /pro-rust skill to align with my preferred patterns
 ```
 
 ### Implement
 ```text
-- use the /pm skill to list all orphaned WorkItems
-- Find PONE-1
-- Review all descendant tasks.
+- use /pm to list all orphaned WorkItems
+- Find PONE-2
+- Review all descendants
+- Move PONE-2 and all descendant to `In Progress`
 - read `CRITICAL_OPERATING_CONSTRAINTS.md`
 - Teach me by presenting bite-sized chunks for me to write/edit keeping the commentary separate from the code snippets to make the code snippets easier for me to follow
+- As WorkItems are completed, use /pm to move them to `review`
+```
+
+### Commit
+```text
+I have staged all files, please commit without a byline.
 ```
 
 ---
