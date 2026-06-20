@@ -12,7 +12,7 @@ architecture.
 The current implementation surface is intentionally minimal:
 
 - `Cargo.toml`: workspace manifest.
-- `crates/wip`: placeholder Rust crate for early experiments.
+- `crates/auto-scribe`: GPUI desktop app for push-to-talk transcription.
 - `submodules/gpui-component`: local reference for GPUI component patterns.
 - `submodules/zed`: local reference for GPUI, Zed UI architecture, and larger
   Rust workspace patterns.

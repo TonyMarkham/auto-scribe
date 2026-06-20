@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    "crates/auto-scribe",
-    "crates/wip"
+    "crates/auto-scribe"
 ]
 exclude = [
     "submodules/gpui-component",
@@ -17,8 +16,6 @@ edition = "2024"
 ashpd                 = { version = "0.13.11", default-features = false, features = ["async-io", "global_shortcuts"] }
 async-channel         = { version = "2.5.0" }
 cpal                  = { version = "0.16.0" }
-crossbeam-channel     = { version = "0.5.15" }
-eframe                = { version = "0.33.2" }
 error-location        = { version = "0.1.0" }
 futures-util          = { version = "0.3.32" }
 global-hotkey         = { version = "0.8.0" }
