@@ -10,4 +10,13 @@ pub(crate) struct Snapshot {
     pub(crate) stt_recorder_available: bool,
     pub(crate) stt_transcript: String,
     pub(crate) stt_status: String,
+    pub(crate) stt_model_can_download: bool,
+    pub(crate) stt_model_downloading: bool,
+    pub(crate) stt_model_download_files_percent: f32,
+    pub(crate) stt_model_download_files_label: String,
+    pub(crate) stt_model_download_file_percent: f32,
+    pub(crate) stt_model_download_file_known: bool,
+    pub(crate) stt_model_download_file_label: String,
+    pub(crate) stt_model_dir: String,
+    pub(crate) stt_config_path: String,
 }

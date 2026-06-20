@@ -14,6 +14,8 @@ cargo run -p auto-scribe
 
 On first launch under Wayland, the desktop portal may show a dialog that looks like it is asking to add a new shortcut. Approve that dialog. It is authorizing this app to use `Ctrl+Alt+Space`; it is not asking you to choose a different shortcut.
 
+On first launch without local model files, the main window shows a download button. The button downloads the required Nemotron ONNX files into the Auto Scribe app data directory and is replaced by file-count and current-file progress bars while the download is running.
+
 ## Behavior
 
 - Hold `Ctrl+Alt+Space` to show the overlay.
@@ -22,6 +24,36 @@ On first launch under Wayland, the desktop portal may show a dialog that looks l
 - Closing the main window exits the app.
 
 The overlay is hidden on release instead of being destroyed. This avoids Wayland compositor behavior where closing a transient overlay can also close the main window.
+
+## Model Files
+
+Auto Scribe uses the `parakeet-rs` crate from crates.io, but the ONNX model files are downloaded separately.
+
+The default model directory is:
+
+```text
+$XDG_DATA_HOME/auto-scribe/models/nemotron-speech-streaming-en-0.6b
+```
+
+If `XDG_DATA_HOME` is not set, it uses:
+
+```text
+~/.local/share/auto-scribe/models/nemotron-speech-streaming-en-0.6b
+```
+
+The local config file is:
+
+```text
+$XDG_DATA_HOME/auto-scribe/config.toml
+```
+
+or:
+
+```text
+~/.local/share/auto-scribe/config.toml
+```
+
+The config file is created automatically and includes the model directory and base download URL. `NEMOTRON_MODEL_DIR` overrides the configured model directory for local development.
 
 ## Linux And Wayland
 

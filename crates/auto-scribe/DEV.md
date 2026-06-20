@@ -14,10 +14,37 @@ cargo clippy --workspace --all-targets --offline
 ## Crate Layout
 
 - `src/main.rs` starts GPUI, creates the controller, starts the hotkey runtime, and opens the main window.
-- `src/hotkey.rs` owns backend selection, hotkey runtime setup, runtime event dispatch, and overlay lifecycle state.
+- `src/hotkey/` owns backend selection, hotkey runtime setup, runtime event dispatch, and overlay lifecycle state.
+- `src/stt/model_config.rs` owns the XDG app data path and `config.toml` loading.
+- `src/stt/model_download.rs` downloads the required Nemotron ONNX files into a staging directory and atomically installs them.
 - `src/windows/main_window.rs` renders the status window.
 - `src/windows/hotkey_window.rs` renders the hold overlay.
 - `data/dev.gpui.AutoScribe.desktop` is the desktop entry template used by the Wayland portal path and by packaging.
+
+## Model Handling
+
+The app depends on the crates.io `parakeet-rs` package for runtime inference code. Model files are not stored in the repo and are not shipped by the crate.
+
+The app data directory is `$XDG_DATA_HOME/auto-scribe`, or `~/.local/share/auto-scribe` when `XDG_DATA_HOME` is unset.
+
+On startup, `ModelConfig::load` creates `config.toml` if it is missing. The default config is:
+
+```toml
+[model]
+directory = "models/nemotron-speech-streaming-en-0.6b"
+base_url = "https://huggingface.co/altunenes/parakeet-rs/resolve/main/nemotron-speech-streaming-en-0.6b"
+```
+
+Relative model directories resolve under the app data directory. `NEMOTRON_MODEL_DIR` overrides the configured model directory.
+
+The required files are:
+
+- `encoder.onnx`
+- `encoder.onnx.data`
+- `decoder_joint.onnx`
+- `tokenizer.model`
+
+If any required file is missing, the STT session enters `State::ModelMissing`. The main window shows a download button. Once clicked, the session enters `State::Downloading`; the button is replaced by file-count and current-file progress bars until `ModelDownloadFinished`, then the STT worker starts.
 
 ## Backend Selection
 

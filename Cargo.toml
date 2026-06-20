@@ -24,6 +24,8 @@ parakeet-rs           = { version = "0.3.0" }
 pollster              = { version = "0.4.0" }
 rubato                = { version = "0.16.2" }
 thiserror             = { version = "2.0.18" }
+toml                  = { version = "0.8.23" }
+ureq                  = { version = "3.3.0", default-features = false, features = ["native-tls"] }
 
 # submodules
 gpui                  = { path = "submodules/zed/crates/gpui" }

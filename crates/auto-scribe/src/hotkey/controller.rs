@@ -57,6 +57,15 @@ impl Controller {
             stt_recorder_available: stt.recorder_available,
             stt_transcript: stt.transcript,
             stt_status: stt.status,
+            stt_model_can_download: stt.model_can_download,
+            stt_model_downloading: stt.model_downloading,
+            stt_model_download_files_percent: stt.model_download_files_percent,
+            stt_model_download_files_label: stt.model_download_files_label,
+            stt_model_download_file_percent: stt.model_download_file_percent,
+            stt_model_download_file_known: stt.model_download_file_known,
+            stt_model_download_file_label: stt.model_download_file_label,
+            stt_model_dir: stt.model_dir,
+            stt_config_path: stt.config_path,
         }
     }
 
@@ -93,7 +102,11 @@ impl Controller {
     pub(crate) fn apply_stt_event(&mut self, event: WorkerEvent, cx: &mut Context<Self>) {
         let completed_transcript = match &event {
             WorkerEvent::Transcript(transcript) => Some(transcript.clone()),
-            WorkerEvent::Ready | WorkerEvent::Error(_) => None,
+            WorkerEvent::Ready
+            | WorkerEvent::Error(_)
+            | WorkerEvent::ModelDownloadProgress { .. }
+            | WorkerEvent::ModelDownloadFinished
+            | WorkerEvent::ModelDownloadError(_) => None,
         };
 
         self.stt.apply_worker_event(event);
@@ -104,6 +117,11 @@ impl Controller {
             self.schedule_popup_close_after_transcript(cx);
         }
 
+        cx.notify();
+    }
+
+    pub(crate) fn download_model(&mut self, cx: &mut Context<Self>) {
+        self.stt.start_model_download();
         cx.notify();
     }
 

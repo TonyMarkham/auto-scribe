@@ -4,15 +4,6 @@
 [submodule "submodules/zed"]
 	path = submodules/zed
 	url = https://github.com/TonyMarkham/zed.git
-[submodule "submodules/NeMo"]
-	path = submodules/NeMo
-	url = https://github.com/NVIDIA-NeMo/NeMo.git
-[submodule "submodules/nemotron-speech-streaming-en-0.6b"]
-	path = submodules/nemotron-speech-streaming-en-0.6b
-	url = https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b
-[submodule "submodules/parakeet-rs"]
-	path = submodules/parakeet-rs
-	url = https://huggingface.co/altunenes/parakeet-rs
 [submodule "submodules/gpui-template"]
 	path = submodules/gpui-template
 	url = https://github.com/TonyMarkham/gpui-template.git

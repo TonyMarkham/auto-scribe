@@ -38,6 +38,9 @@ Rust workspace:
   `unused_must_use`.
 - Workspace dependencies include `thiserror`, `error-location`, `gpui`, and
   `gpui-component`.
+- Auto Scribe downloads Nemotron ONNX model files into the XDG app data
+  directory at runtime. Do not add large model artifacts back to Git unless the
+  user explicitly asks for that packaging strategy.
 
 Submodules:
 

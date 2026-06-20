@@ -7,10 +7,16 @@ use crate::{
 
 use crate::error::{AppResult, ResultContext};
 use gpui::{
-    App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    Styled, Window, WindowBounds, WindowOptions, div, px, rgb, size,
+    AnyElement, App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement,
+    Render, Styled, Window, WindowBounds, WindowOptions, div, px, rgb, size,
 };
-use gpui_component::{ActiveTheme, Root, StyledExt, TitleBar, v_flex};
+use gpui_component::{
+    ActiveTheme, IconName, Root, StyledExt, TitleBar,
+    button::{Button, ButtonVariants},
+    h_flex,
+    progress::Progress,
+    v_flex,
+};
 
 #[cfg(target_os = "linux")]
 use gpui::WindowDecorations;
@@ -35,6 +41,7 @@ impl Render for MainWindow {
         } else {
             snapshot.stt_transcript.clone()
         };
+        let model_download_control = self.model_download_control(&snapshot, cx);
 
         let title_bar = TitleBar::new();
         #[cfg(not(target_os = "macos"))]
@@ -96,6 +103,7 @@ impl Render for MainWindow {
                             "unavailable"
                         },
                     ))
+                    .child(model_download_control)
                     .child(
                         div()
                             .text_sm()
@@ -122,6 +130,131 @@ impl Render for MainWindow {
                     ),
             )
             .child(window_resize_handles(window))
+    }
+}
+
+impl MainWindow {
+    fn model_download_control(
+        &self,
+        snapshot: &crate::hotkey::Snapshot,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        if snapshot.stt_model_downloading {
+            return v_flex()
+                .w_full()
+                .gap_3()
+                .border_1()
+                .border_color(rgb(0x334155))
+                .rounded_md()
+                .p_3()
+                .child(
+                    h_flex()
+                        .items_center()
+                        .justify_between()
+                        .gap_3()
+                        .child(div().text_sm().font_semibold().child("Downloading model")),
+                )
+                .child(self.download_progress_row(
+                    "model-download-files-progress",
+                    "Files",
+                    snapshot.stt_model_download_files_label.clone(),
+                    snapshot.stt_model_download_files_percent,
+                    false,
+                    cx,
+                ))
+                .child(self.download_progress_row(
+                    "model-download-file-progress",
+                    "Current File DL",
+                    snapshot.stt_model_download_file_label.clone(),
+                    snapshot.stt_model_download_file_percent,
+                    !snapshot.stt_model_download_file_known,
+                    cx,
+                ))
+                .into_any_element();
+        }
+
+        if snapshot.stt_model_can_download {
+            return h_flex()
+                .w_full()
+                .items_center()
+                .justify_between()
+                .gap_3()
+                .border_1()
+                .border_color(rgb(0x334155))
+                .rounded_md()
+                .p_3()
+                .child(
+                    v_flex()
+                        .min_w_0()
+                        .gap_1()
+                        .child(
+                            div()
+                                .text_sm()
+                                .font_semibold()
+                                .child("Model files are missing"),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .overflow_hidden()
+                                .truncate()
+                                .text_color(cx.theme().muted_foreground)
+                                .child(format!("Target: {}", snapshot.stt_model_dir)),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .overflow_hidden()
+                                .truncate()
+                                .text_color(cx.theme().muted_foreground)
+                                .child(format!("Config: {}", snapshot.stt_config_path)),
+                        ),
+                )
+                .child(
+                    Button::new("download-model")
+                        .primary()
+                        .icon(IconName::ArrowDown)
+                        .label("Download model")
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.controller
+                                .update(cx, |controller, cx| controller.download_model(cx));
+                        })),
+                )
+                .into_any_element();
+        }
+
+        div().hidden().into_any_element()
+    }
+
+    fn download_progress_row(
+        &self,
+        id: &'static str,
+        label: &'static str,
+        detail: String,
+        value: f32,
+        loading: bool,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        v_flex()
+            .w_full()
+            .gap_1()
+            .child(
+                h_flex()
+                    .items_center()
+                    .justify_between()
+                    .gap_3()
+                    .child(div().text_xs().font_semibold().child(label))
+                    .child(
+                        div()
+                            .min_w_0()
+                            .text_xs()
+                            .overflow_hidden()
+                            .truncate()
+                            .text_color(cx.theme().muted_foreground)
+                            .child(detail),
+                    ),
+            )
+            .child(Progress::new(id).value(value).loading(loading))
     }
 }
 

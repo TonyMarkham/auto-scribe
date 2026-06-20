@@ -525,6 +525,8 @@ dependencies = [
  "pollster 0.4.0",
  "rubato",
  "thiserror 2.0.18",
+ "toml 0.8.23",
+ "ureq",
 ]
 
 [[package]]

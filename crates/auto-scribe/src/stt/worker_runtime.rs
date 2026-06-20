@@ -12,13 +12,13 @@ use std::{path::PathBuf, thread};
 
 pub(crate) fn spawn_stt_worker(
     model_dir: PathBuf,
-) -> SttResult<(Sender<WorkerRequest>, Receiver<WorkerEvent>)> {
+    event_tx: Sender<WorkerEvent>,
+) -> SttResult<Sender<WorkerRequest>> {
     let (request_tx, request_rx) = async_channel::unbounded();
-    let (event_tx, event_rx) = async_channel::unbounded();
     let error_tx = event_tx.clone();
 
     let _worker_thread = thread::Builder::new()
-        .name("hotkey-hold-stt-worker".to_string())
+        .name("auto-scribe-stt-worker".to_string())
         .spawn(move || {
             if let Err(error) = run_stt_worker(model_dir, request_rx, event_tx) {
                 let _ = error_tx.send_blocking(WorkerEvent::Error(error.to_string()));
@@ -26,7 +26,7 @@ pub(crate) fn spawn_stt_worker(
         })
         .map_err(|error| SttError::speech_to_text(error.to_string()))?;
 
-    Ok((request_tx, event_rx))
+    Ok(request_tx)
 }
 
 fn run_stt_worker(
