@@ -15,16 +15,16 @@ edition = "2024"
 [workspace.dependencies]
 ashpd                 = { version = "0.13.11", default-features = false, features = ["async-io", "global_shortcuts"] }
 async-channel         = { version = "2.5.0" }
-cpal                  = { version = "0.16.0" }
+cpal                  = { version = "0.18.1" }
 error-location        = { version = "0.1.0" }
 futures-util          = { version = "0.3.32" }
 global-hotkey         = { version = "0.8.0" }
-image                 = { version = "0.25.1" }
-parakeet-rs           = { version = "0.3.0" }
+image                 = { version = "0.25.10" }
+parakeet-rs           = { version = "0.3.6" }
 pollster              = { version = "0.4.0" }
-rubato                = { version = "0.16.2" }
+rubato                = { version = "3.0.0" }
 thiserror             = { version = "2.0.18" }
-toml                  = { version = "0.8.23" }
+toml                  = { version = "1.1.2" }
 ureq                  = { version = "3.3.0", default-features = false, features = ["native-tls"] }
 
 # submodules

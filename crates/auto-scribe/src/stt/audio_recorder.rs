@@ -3,7 +3,7 @@ use crate::stt::{
 };
 
 use cpal::{
-    FromSample, Sample, SampleFormat, SampleRate, SizedSample, Stream, StreamConfig,
+    FromSample, Sample, SampleFormat, SizedSample, Stream, StreamConfig,
     traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 use std::sync::{Arc, Mutex};
@@ -23,7 +23,7 @@ impl AudioRecorder {
         let supported_config = select_input_config(&device)?;
         let sample_format = supported_config.sample_format();
         let config: StreamConfig = supported_config.into();
-        let sample_rate = config.sample_rate.0;
+        let sample_rate = config.sample_rate;
         let channels = usize::from(config.channels);
 
         if channels == 0 {
@@ -91,7 +91,7 @@ impl AudioRecorder {
 }
 
 fn select_input_config(device: &cpal::Device) -> SttResult<cpal::SupportedStreamConfig> {
-    let target_rate = SampleRate(TARGET_SAMPLE_RATE);
+    let target_rate = TARGET_SAMPLE_RATE;
     let supported_configs = device
         .supported_input_configs()
         .map_err(|error| SttError::audio_device(error.to_string()))?;
@@ -148,7 +148,7 @@ where
     let error_state = Arc::clone(&state);
     device
         .build_input_stream(
-            config,
+            *config,
             move |data: &[T], _callback_info| {
                 record_input_data(data, channels, &state);
             },

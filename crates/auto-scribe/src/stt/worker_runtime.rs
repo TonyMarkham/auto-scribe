@@ -6,7 +6,8 @@ use crate::stt::{
 use async_channel::{Receiver, Sender};
 use parakeet_rs::Nemotron;
 use rubato::{
-    Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
+    Async, FixedAsync, Resampler, SincInterpolationParameters, SincInterpolationType,
+    WindowFunction, audioadapter_buffers::owned::InterleavedOwned,
 };
 use std::{path::PathBuf, thread};
 
@@ -108,18 +109,18 @@ fn resample_to_16k(samples: Vec<f32>, source_sample_rate: u32) -> SttResult<Vec<
     };
     let ratio = f64::from(TARGET_SAMPLE_RATE) / f64::from(source_sample_rate);
     let input_len = samples.len();
-    let mut resampler = SincFixedIn::<f32>::new(ratio, 2.0, params, input_len, 1)
+    let chunk_size = input_len.min(1024);
+    let mut resampler =
+        Async::<f32>::new_sinc(ratio, 2.0, &params, chunk_size, 1, FixedAsync::Input)
+            .map_err(|error| SttError::resampling(error.to_string()))?;
+    let output_len = resampler.process_all_needed_output_len(input_len);
+    let input = InterleavedOwned::new_from(samples, 1, input_len)
         .map_err(|error| SttError::resampling(error.to_string()))?;
-    let input = [samples];
-    let mut output_channels = resampler
-        .process(&input, None)
+    let mut output = InterleavedOwned::new(0.0, 1, output_len);
+    let (_, frames_out) = resampler
+        .process_all_into_buffer(&input, &mut output, input_len, None)
         .map_err(|error| SttError::resampling(error.to_string()))?;
-
-    if output_channels.is_empty() {
-        return Err(SttError::resampling(
-            "resampler returned no output channels",
-        ));
-    }
-
-    Ok(output_channels.remove(0))
+    let mut output_samples = output.take_data();
+    output_samples.truncate(frames_out);
+    Ok(output_samples)
 }
