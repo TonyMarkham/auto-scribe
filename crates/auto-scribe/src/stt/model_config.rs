@@ -10,6 +10,7 @@ pub(crate) struct ModelConfig {
     config_path: PathBuf,
     model_dir: PathBuf,
     model_base_url: String,
+    use_gpu: bool,
     auto_mute_speakers: bool,
 }
 
@@ -38,6 +39,10 @@ impl ModelConfig {
             .and_then(|table| table.get("base_url"))
             .and_then(toml::Value::as_str)
             .unwrap_or(DEFAULT_MODEL_BASE_URL);
+        let use_gpu = model_table
+            .and_then(|table| table.get("use_gpu"))
+            .and_then(toml::Value::as_bool)
+            .unwrap_or(false);
 
         let configured_model_dir = resolve_model_dir(&app_data_dir, configured_dir)?;
         let model_dir = env::var_os("NEMOTRON_MODEL_DIR")
@@ -60,6 +65,7 @@ impl ModelConfig {
             config_path,
             model_dir,
             model_base_url,
+            use_gpu,
             auto_mute_speakers,
         })
     }
@@ -76,6 +82,18 @@ impl ModelConfig {
         format!("{}/{}", self.model_base_url, file_name)
     }
 
+    pub(crate) fn use_gpu(&self) -> bool {
+        self.use_gpu
+    }
+
+    pub(crate) fn set_use_gpu(&mut self, enabled: bool) -> SttResult<()> {
+        let mut parsed = read_config_table(&self.config_path)?;
+        upsert_model_use_gpu(&mut parsed, enabled);
+        self.write_config(parsed)?;
+        self.use_gpu = enabled;
+        Ok(())
+    }
+
     pub(crate) fn auto_mute_speakers(&self) -> bool {
         self.auto_mute_speakers
     }
@@ -83,6 +101,12 @@ impl ModelConfig {
     pub(crate) fn set_auto_mute_speakers(&mut self, enabled: bool) -> SttResult<()> {
         let mut parsed = read_config_table(&self.config_path)?;
         upsert_audio_auto_mute(&mut parsed, enabled);
+        self.write_config(parsed)?;
+        self.auto_mute_speakers = enabled;
+        Ok(())
+    }
+
+    fn write_config(&self, parsed: toml::Table) -> SttResult<()> {
         let config_text = toml::to_string_pretty(&parsed).map_err(|error| {
             SttError::model_path(format!("serialize {}: {error}", self.config_path.display()))
         })?;
@@ -90,7 +114,6 @@ impl ModelConfig {
         fs::write(&self.config_path, config_text).map_err(|error| {
             SttError::model_path(format!("write {}: {error}", self.config_path.display()))
         })?;
-        self.auto_mute_speakers = enabled;
         Ok(())
     }
 }
@@ -103,6 +126,20 @@ fn read_config_table(config_path: &Path) -> SttResult<toml::Table> {
     config_text
         .parse::<toml::Table>()
         .map_err(|error| SttError::model_path(format!("parse {}: {error}", config_path.display())))
+}
+
+fn upsert_model_use_gpu(parsed: &mut toml::Table, enabled: bool) {
+    let model = parsed
+        .entry("model".to_string())
+        .or_insert_with(|| toml::Value::Table(toml::Table::new()));
+
+    if !model.is_table() {
+        *model = toml::Value::Table(toml::Table::new());
+    }
+
+    if let Some(model_table) = model.as_table_mut() {
+        model_table.insert("use_gpu".to_string(), toml::Value::Boolean(enabled));
+    }
 }
 
 fn upsert_audio_auto_mute(parsed: &mut toml::Table, enabled: bool) {
@@ -170,6 +207,7 @@ fn default_config_text() -> String {
 [model]
 directory = "{DEFAULT_MODEL_DIRECTORY}"
 base_url = "{DEFAULT_MODEL_BASE_URL}"
+use_gpu = false
 
 [audio]
 auto_mute_speakers = false

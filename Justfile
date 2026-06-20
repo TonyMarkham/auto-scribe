@@ -33,7 +33,9 @@ refresh:
 
 publish:
     mkdir -p /home/tony/.local/share/auto-scribe/bin
-    cp target/release/auto-scribe /home/tony/.local/share/auto-scribe/bin/
+    cp target/release/auto-scribe /home/tony/.local/share/auto-scribe/bin/auto-scribe.tmp
+    mv /home/tony/.local/share/auto-scribe/bin/auto-scribe.tmp /home/tony/.local/share/auto-scribe/bin/auto-scribe
+    for lib in target/release/libonnxruntime*.so*; do cp "${lib}" "/home/tony/.local/share/auto-scribe/bin/$(basename "${lib}").tmp"; mv "/home/tony/.local/share/auto-scribe/bin/$(basename "${lib}").tmp" "/home/tony/.local/share/auto-scribe/bin/$(basename "${lib}")"; done
 
 seperator:
     @echo

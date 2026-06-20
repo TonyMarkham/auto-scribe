@@ -79,12 +79,52 @@ or:
 ~/.local/share/auto-scribe/config.toml
 ```
 
-The config file is created automatically and includes the model directory, base download URL, and audio settings. `NEMOTRON_MODEL_DIR` overrides the configured model directory for local development.
+The config file is created automatically and includes the model directory, base download URL, GPU setting, and audio settings. `NEMOTRON_MODEL_DIR` overrides the configured model directory for local development.
 
 ```toml
+[model]
+directory = "models/nemotron-speech-streaming-en-0.6b"
+base_url = "https://huggingface.co/altunenes/parakeet-rs/resolve/main/nemotron-speech-streaming-en-0.6b"
+use_gpu = false
+
 [audio]
 auto_mute_speakers = false
 ```
+
+## CUDA GPU Acceleration
+
+The `Use GPU` toggle enables NVIDIA CUDA inference through ONNX Runtime. When disabled, Auto Scribe uses CPU inference.
+
+The setting is persisted in `config.toml`:
+
+```toml
+[model]
+use_gpu = true
+```
+
+The current GPU path is CUDA-only. Apple Silicon, Radeon, and Intel Arc are not enabled by this toggle.
+
+For published release builds, run `just publish` after `cargo build --release`. The publish recipe copies the executable and the ONNX Runtime provider libraries into:
+
+```text
+~/.local/share/auto-scribe/bin/
+```
+
+If GPU loading fails with `libonnxruntime_providers_shared.so: cannot open shared object file`, republish the app so the ONNX Runtime provider `.so` files sit beside the executable.
+
+If GPU loading fails with a missing CUDA library such as `libcublasLt.so.12`, install the CUDA 12 runtime libraries and cuDNN. On Ubuntu:
+
+```bash
+sudo apt-get install -y libcublas12 libcublaslt12 libcudart12 libcufft11 libcurand10 nvidia-cudnn
+```
+
+Then verify that the CUDA provider can resolve its dependencies:
+
+```bash
+ldd ~/.local/share/auto-scribe/bin/libonnxruntime_providers_cuda.so | grep 'not found'
+```
+
+That command should print nothing. `nvidia-smi` should also be able to see the GPU.
 
 ## Linux And Wayland
 

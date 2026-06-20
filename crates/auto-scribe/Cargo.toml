@@ -21,6 +21,7 @@ gpui-component        = { workspace = true }
 gpui-component-assets = { workspace = true }
 gpui_platform         = { workspace = true }
 image                 = { workspace = true }
+ort                   = { workspace = true }
 parakeet-rs           = { workspace = true }
 rubato                = { workspace = true }
 thiserror             = { workspace = true }

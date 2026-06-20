@@ -20,7 +20,8 @@ error-location        = { version = "0.1.0" }
 futures-util          = { version = "0.3.32" }
 global-hotkey         = { version = "0.8.0" }
 image                 = { version = "0.25.10" }
-parakeet-rs           = { version = "0.3.6" }
+ort                   = { version = "2.0.0-rc.12", default-features = false, features = ["std", "ndarray", "api-24", "cuda"] }
+parakeet-rs           = { version = "0.3.6", features = ["cuda"] }
 pollster              = { version = "0.4.0" }
 rubato                = { version = "3.0.0" }
 thiserror             = { version = "2.0.18" }

@@ -4,7 +4,7 @@ use crate::stt::{
 };
 
 use async_channel::{Receiver, Sender};
-use parakeet_rs::Nemotron;
+use parakeet_rs::{ExecutionConfig, Nemotron};
 use rubato::{
     Async, FixedAsync, Resampler, SincInterpolationParameters, SincInterpolationType,
     WindowFunction, audioadapter_buffers::owned::InterleavedOwned,
@@ -13,6 +13,7 @@ use std::{path::PathBuf, thread};
 
 pub(crate) fn spawn_stt_worker(
     model_dir: PathBuf,
+    use_gpu: bool,
     event_tx: Sender<WorkerEvent>,
 ) -> SttResult<Sender<WorkerRequest>> {
     let (request_tx, request_rx) = async_channel::unbounded();
@@ -21,7 +22,7 @@ pub(crate) fn spawn_stt_worker(
     let _worker_thread = thread::Builder::new()
         .name("auto-scribe-stt-worker".to_string())
         .spawn(move || {
-            if let Err(error) = run_stt_worker(model_dir, request_rx, event_tx) {
+            if let Err(error) = run_stt_worker(model_dir, use_gpu, request_rx, event_tx) {
                 let _ = error_tx.send_blocking(WorkerEvent::Error(error.to_string()));
             }
         })
@@ -32,11 +33,12 @@ pub(crate) fn spawn_stt_worker(
 
 fn run_stt_worker(
     model_dir: PathBuf,
+    use_gpu: bool,
     request_rx: Receiver<WorkerRequest>,
     event_tx: Sender<WorkerEvent>,
 ) -> SttResult<()> {
     validate_model_dir(&model_dir)?;
-    let mut model = Nemotron::from_pretrained(&model_dir, None)
+    let mut model = Nemotron::from_pretrained(&model_dir, execution_config(use_gpu))
         .map_err(|error| SttError::speech_to_text(error.to_string()))?;
     send_event(&event_tx, WorkerEvent::Ready)?;
 
@@ -54,6 +56,19 @@ fn run_stt_worker(
     }
 
     Ok(())
+}
+
+fn execution_config(use_gpu: bool) -> Option<ExecutionConfig> {
+    if use_gpu {
+        return Some(ExecutionConfig::new().with_custom_configure(|builder| {
+            Ok(builder.with_execution_providers([
+                ort::ep::CUDA::default().build().error_on_failure(),
+                ort::ep::CPU::default().build().error_on_failure(),
+            ])?)
+        }));
+    }
+
+    None
 }
 
 fn send_event(event_tx: &Sender<WorkerEvent>, event: WorkerEvent) -> SttResult<()> {

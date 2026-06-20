@@ -22,6 +22,7 @@ pub(crate) struct Session {
     download_file_bytes: u64,
     download_file_total_bytes: Option<u64>,
     speaker_mute: Option<SpeakerMuteGuard>,
+    worker_use_gpu: Option<bool>,
 }
 
 impl Session {
@@ -30,6 +31,7 @@ impl Session {
         let (event_tx, event_rx) = async_channel::unbounded();
         let (worker_tx, mut state, mut status) =
             start_worker_if_model_is_installed(&model_config, event_tx.clone());
+        let worker_use_gpu = worker_tx.as_ref().map(|_| model_config.use_gpu());
 
         let recorder = match AudioRecorder::new() {
             Ok(recorder) => Some(recorder),
@@ -61,6 +63,7 @@ impl Session {
                 download_file_bytes: 0,
                 download_file_total_bytes: None,
                 speaker_mute: None,
+                worker_use_gpu,
             },
             event_rx,
         ))
@@ -82,6 +85,7 @@ impl Session {
             model_download_file_label: self.download_file_label(),
             model_dir: self.model_config.model_dir().display().to_string(),
             config_path: self.model_config.config_path().display().to_string(),
+            use_gpu: self.model_config.use_gpu(),
             auto_mute_speakers: self.model_config.auto_mute_speakers(),
         }
     }
@@ -118,6 +122,7 @@ impl Session {
         }
 
         self.worker_tx = None;
+        self.worker_use_gpu = None;
         self.worker_ready = false;
         self.state = State::Downloading;
         self.status = format!(
@@ -134,6 +139,51 @@ impl Session {
             self.state = State::ModelMissing;
             self.status = format!("Model download failed: {error}");
         }
+    }
+
+    pub(crate) fn set_use_gpu(&mut self, enabled: bool) {
+        if let Err(error) = self.model_config.set_use_gpu(enabled) {
+            self.status = format!("Failed to save GPU setting: {error}");
+            return;
+        }
+
+        if self.state == State::Downloading {
+            self.status = if enabled {
+                "GPU inference enabled; model download still running".to_string()
+            } else {
+                "GPU inference disabled; model download still running".to_string()
+            };
+            return;
+        }
+
+        if self.state == State::Loading {
+            self.status = if enabled {
+                "GPU inference enabled; it will apply after the current model load".to_string()
+            } else {
+                "GPU inference disabled; it will apply after the current model load".to_string()
+            };
+            return;
+        }
+
+        if matches!(self.state, State::Recording | State::Transcribing) {
+            self.status = if enabled {
+                "GPU inference enabled; it will apply after this transcription".to_string()
+            } else {
+                "GPU inference disabled; it will apply after this transcription".to_string()
+            };
+            return;
+        }
+
+        if validate_model_dir(self.model_config.model_dir()).is_ok() {
+            self.start_worker();
+            return;
+        }
+
+        self.status = if enabled {
+            "GPU inference enabled".to_string()
+        } else {
+            "GPU inference disabled".to_string()
+        };
     }
 
     pub(crate) fn set_auto_mute_speakers(&mut self, enabled: bool) {
@@ -248,14 +298,16 @@ impl Session {
                 self.worker_ready = true;
                 if self.recorder.is_some() && self.state == State::Loading {
                     self.state = State::Idle;
-                    self.status = "Ready".to_string();
+                    self.status = self.ready_status();
+                    self.restart_worker_if_gpu_setting_changed();
                 }
             }
             WorkerEvent::Transcript(transcript) => {
                 self.transcript = transcript;
                 self.state = State::Idle;
-                self.status = "Ready".to_string();
+                self.status = self.ready_status();
                 self.popup_recording_active = false;
+                self.restart_worker_if_gpu_setting_changed();
             }
             WorkerEvent::Error(message) => {
                 self.set_error(SttError::speech_to_text(message));
@@ -289,6 +341,7 @@ impl Session {
                 self.download_total_files = 0;
                 self.download_file_bytes = 0;
                 self.download_file_total_bytes = None;
+                self.worker_use_gpu = None;
                 self.worker_ready = false;
                 self.worker_tx = None;
                 self.state = State::ModelMissing;
@@ -392,10 +445,29 @@ impl Session {
         let (worker_tx, state, status) =
             start_worker_if_model_is_installed(&self.model_config, self.event_tx.clone());
 
+        self.worker_use_gpu = worker_tx.as_ref().map(|_| self.model_config.use_gpu());
         self.worker_tx = worker_tx;
         self.worker_ready = false;
         self.state = state;
         self.status = status;
+    }
+
+    fn restart_worker_if_gpu_setting_changed(&mut self) {
+        if self.worker_use_gpu == Some(self.model_config.use_gpu()) {
+            return;
+        }
+
+        if validate_model_dir(self.model_config.model_dir()).is_ok() {
+            self.start_worker();
+        }
+    }
+
+    fn ready_status(&self) -> String {
+        if self.model_config.use_gpu() {
+            "Ready; GPU inference".to_string()
+        } else {
+            "Ready; CPU inference".to_string()
+        }
     }
 
     fn download_files_percent(&self) -> f32 {
@@ -474,11 +546,17 @@ fn start_worker_if_model_is_installed(
         );
     }
 
-    match spawn_stt_worker(model_dir.clone(), event_tx) {
+    let use_gpu = model_config.use_gpu();
+
+    match spawn_stt_worker(model_dir.clone(), use_gpu, event_tx) {
         Ok(worker_tx) => (
             Some(worker_tx),
             State::Loading,
-            format!("Loading STT model from {}", model_dir.display()),
+            format!(
+                "Loading STT model from {} ({})",
+                model_dir.display(),
+                if use_gpu { "GPU" } else { "CPU" },
+            ),
         ),
         Err(error) => (None, State::Error, error.to_string()),
     }

@@ -104,6 +104,7 @@ impl Render for MainWindow {
                             "unavailable"
                         },
                     ))
+                    .child(self.use_gpu_control(&snapshot, cx))
                     .child(self.auto_mute_control(&snapshot, cx))
                     .child(model_download_control)
                     .child(
@@ -136,6 +137,35 @@ impl Render for MainWindow {
 }
 
 impl MainWindow {
+    fn use_gpu_control(
+        &self,
+        snapshot: &crate::hotkey::Snapshot,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        let controller = self.controller.clone();
+
+        h_flex()
+            .w_full()
+            .items_center()
+            .justify_between()
+            .gap_3()
+            .border_1()
+            .border_color(rgb(0x334155))
+            .rounded_md()
+            .px_3()
+            .py_2()
+            .child(div().text_sm().text_color(rgb(0x94a3b8)).child("Use GPU"))
+            .child(
+                Switch::new("use-gpu")
+                    .checked(snapshot.stt_use_gpu)
+                    .on_click(move |enabled, _, cx| {
+                        controller.update(cx, |controller, cx| {
+                            controller.set_use_gpu(*enabled, cx);
+                        });
+                    }),
+            )
+    }
+
     fn auto_mute_control(
         &self,
         snapshot: &crate::hotkey::Snapshot,
