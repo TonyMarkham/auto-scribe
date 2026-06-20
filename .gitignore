@@ -1,35 +1,26 @@
-# Rust build artifacts
-/target/
-**/*.rs.bk
-*.pdb
+# Build Artifacts
+target/
+bin/
+obj/
 
-# Cargo lock file (uncomment if this is a library crate)
-# Cargo.lock
+# Local generated state
+.local/
+.refactor-radar/fts.tantivy/**
+.refactor-radar/fts.db
+.refactor-radar/content.db
+!.refactor-radar/config.toml
+*.db
+*.db-*
 
-# IDE and editor files
+# IDE
 .idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
+.zed/
 
-# OS-specific files
-Thumbs.db
-.AppleDouble
-.LSOverride
+# Codex
+.agents/
+.codex/*
+!.codex/
+!.codex/config.toml
 
-# Debug files
-*.log
-*.tmp
-
-# Environment files (may contain secrets)
-.env
-.env.local
-.env.*.local
-
-# Test coverage
-tarpaulin-report.html
-cobertura.xml
-*.profraw
-*.profdata
+# Cargo
+.cargo/

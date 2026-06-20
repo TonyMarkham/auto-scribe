@@ -1,57 +1,47 @@
 [workspace]
 members = [
-    "crates/auto-scribe",
-    "crates/auto-scribe-core"
+    "crates/hotkey-hold-app",
+    "crates/wip"
+]
+exclude = [
+    "submodules/gpui-component",
+    "submodules/zed"
 ]
 resolver = "3"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
-repository = "https://github.com/TonyMarkham/auto-scribe"
-authors = ["TonyMarkham"]
-
-[workspace.lints.clippy]
-# Enforce proper error handling (no .unwrap() or .expect())
-unwrap_used = "deny"
-expect_used = "deny"
-panic = "deny"
-
-[workspace.lints.rust]
-# Force handling of Result types
-unused_must_use = "deny"
-# Warn about missing documentation
-missing_docs = "warn"
 
 [workspace.dependencies]
-audioadapter-buffers = { version = "2.0.0" }
-axum = { version = "0.8.8", features = ["ws"] }
-arboard = { version = "3.6.1" }
-cpal = { version = "0.17.1" }
-directories = { version = "6.0.0" }
-enigo = { version = "0.6.1" }
-error-location = { version = "0.1.0" }
-global-hotkey = { version = "0.7.0" }
-image = { version = "0.25.9", default-features = false, features = ["png"] }
-notify-rust = { version = "4.12.0" }
-open = { version = "5.3.3" }
-rubato = { version = "1.0.1" }
-serde = { version = "1.0.228" }
-thiserror = { version = "2.0.18" }
-tao = { version = "0.34.5" }
-toml = { version = "0.9.8" }
-tokio = { version = "1.49.0", features = ["rt-multi-thread", "sync", "time", "macros"] }
-tower = { version = "0.5.3" }
-tower-http = {version = "0.6.8", features = ["fs", "cors"]}
-tracing = { version = "0.1.44" }
-tracing-appender = { version = "0.2.4" }
-tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
-tray-icon = { version = "0.21.3" }
-uuid = { version = "1.20.0", features = ["v4", "serde"] }
-whisper-rs = { version = "0.15.1" }
+ashpd                 = { version = "0.13.11", default-features = false, features = ["async-io", "global_shortcuts"] }
+async-channel         = { version = "2.5.0" }
+cpal                  = { version = "0.16.0" }
+crossbeam-channel     = { version = "0.5.15" }
+eframe                = { version = "0.33.2" }
+error-location        = { version = "0.1.0" }
+futures-util          = { version = "0.3.32" }
+global-hotkey         = { version = "0.8.0" }
+image                 = { version = "0.25.1" }
+parakeet-rs           = { version = "0.3.0" }
+pollster              = { version = "0.4.0" }
+rubato                = { version = "0.16.2" }
+thiserror             = { version = "2.0.18" }
 
-auto-scribe-core = { path = "crates/auto-scribe-core" }
+# submodules
+gpui                  = { path = "submodules/zed/crates/gpui" }
+gpui-component        = { path = "submodules/gpui-component/crates/ui" }
+gpui-component-assets = { path = "submodules/gpui-component/crates/assets" }
+gpui_platform         = { path = "submodules/zed/crates/gpui_platform", features = ["font-kit", "wayland", "x11"] }
 
-[workspace.dependencies.core-foundation]
-version = "0.10.1"
+[patch."https://github.com/zed-industries/zed"]
+gpui                  = { path = "submodules/zed/crates/gpui" }
+gpui_macros           = { path = "submodules/zed/crates/gpui_macros" }
+
+[workspace.lints.clippy]
+unwrap_used           = "deny"
+expect_used           = "deny"
+panic                 = "deny"
+
+[workspace.lints.rust]
+unused_must_use       = "deny"

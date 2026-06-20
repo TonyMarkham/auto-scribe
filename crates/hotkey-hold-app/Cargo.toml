@@ -1,0 +1,34 @@
+[package]
+name = "hotkey-hold-app"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["wayland"]
+wayland = ["gpui/wayland"]
+
+[[bin]]
+name = "hotkey-hold-app"
+path = "src/main.rs"
+
+[dependencies]
+async-channel         = { workspace = true }
+cpal                  = { workspace = true }
+error-location        = { workspace = true }
+global-hotkey         = { workspace = true }
+gpui                  = { workspace = true }
+gpui-component        = { workspace = true }
+gpui-component-assets = { workspace = true }
+gpui_platform         = { workspace = true }
+image                 = { workspace = true }
+parakeet-rs           = { workspace = true }
+rubato                = { workspace = true }
+thiserror             = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+ashpd                 = { workspace = true }
+futures-util          = { workspace = true }
+pollster              = { workspace = true }
+
+[lints]
+workspace             = true
