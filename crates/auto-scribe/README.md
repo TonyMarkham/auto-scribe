@@ -25,6 +25,8 @@ On first launch without local model files, the main window shows a download butt
 
 The overlay is hidden on release instead of being destroyed. This avoids Wayland compositor behavior where closing a transient overlay can also close the main window.
 
+When Auto-Mute is enabled, Auto Scribe mutes the default speaker sink while recording and restores the prior mute state when recording stops.
+
 ## Model Files
 
 Auto Scribe uses the `parakeet-rs` crate from crates.io, but the ONNX model files are downloaded separately.
@@ -53,7 +55,12 @@ or:
 ~/.local/share/auto-scribe/config.toml
 ```
 
-The config file is created automatically and includes the model directory and base download URL. `NEMOTRON_MODEL_DIR` overrides the configured model directory for local development.
+The config file is created automatically and includes the model directory, base download URL, and audio settings. `NEMOTRON_MODEL_DIR` overrides the configured model directory for local development.
+
+```toml
+[audio]
+auto_mute_speakers = false
+```
 
 ## Linux And Wayland
 
@@ -82,6 +89,8 @@ If the portal dialog is cancelled, restart the app and approve the shortcut prom
 If the status shows a Wayland portal response code 2 error, the desktop portal backend likely failed during shortcut binding. Updating `xdg-desktop-portal-gnome` and `gnome-control-center`, or using a desktop portal with working GlobalShortcuts support, is the expected path forward.
 
 If the shortcut does nothing after a rebuild, restart the app so the generated desktop entry points at the current executable.
+
+Speaker auto-mute uses `wpctl` first and falls back to `pactl`. If neither command can control the default sink, dictation still runs and the STT status reports the auto-mute failure.
 
 ## Packaging
 

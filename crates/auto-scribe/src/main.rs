@@ -23,7 +23,7 @@ const WINDOW_TITLE: &str = "Auto Scribe";
 const RESIZE_EDGE_SIZE: Pixels = px(6.0);
 const RESIZE_CORNER_SIZE: Pixels = px(14.0);
 const DEFAULT_START_WIDTH: f32 = 520.0;
-const DEFAULT_START_HEIGHT: f32 = 850.0;
+const DEFAULT_START_HEIGHT: f32 = 900.0;
 const MINIMUM_WIDTH: f32 = 360.0;
 const MINIMUM_HEIGHT: f32 = 220.0;
 

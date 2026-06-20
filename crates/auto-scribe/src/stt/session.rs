@@ -1,6 +1,7 @@
 use crate::stt::{
-    AudioRecorder, MIN_RECORDING_DURATION, ModelConfig, Snapshot, State, SttError, SttResult,
-    WorkerEvent, WorkerRequest, spawn_model_download, spawn_stt_worker, validate_model_dir,
+    AudioRecorder, MIN_RECORDING_DURATION, ModelConfig, Snapshot, SpeakerMuteGuard, State,
+    SttError, SttResult, WorkerEvent, WorkerRequest, spawn_model_download, spawn_stt_worker,
+    validate_model_dir,
 };
 
 use async_channel::{Receiver, Sender};
@@ -20,6 +21,7 @@ pub(crate) struct Session {
     download_total_files: usize,
     download_file_bytes: u64,
     download_file_total_bytes: Option<u64>,
+    speaker_mute: Option<SpeakerMuteGuard>,
 }
 
 impl Session {
@@ -58,6 +60,7 @@ impl Session {
                 download_total_files: 0,
                 download_file_bytes: 0,
                 download_file_total_bytes: None,
+                speaker_mute: None,
             },
             event_rx,
         ))
@@ -79,6 +82,7 @@ impl Session {
             model_download_file_label: self.download_file_label(),
             model_dir: self.model_config.model_dir().display().to_string(),
             config_path: self.model_config.config_path().display().to_string(),
+            auto_mute_speakers: self.model_config.auto_mute_speakers(),
         }
     }
 
@@ -132,6 +136,30 @@ impl Session {
         }
     }
 
+    pub(crate) fn set_auto_mute_speakers(&mut self, enabled: bool) {
+        if let Err(error) = self.model_config.set_auto_mute_speakers(enabled) {
+            self.status = format!("Failed to save auto-mute setting: {error}");
+            return;
+        }
+
+        if enabled {
+            if self.state == State::Recording
+                && self.speaker_mute.is_none()
+                && !self.mute_speakers_for_recording()
+            {
+                return;
+            }
+        } else {
+            self.restore_speakers_after_recording();
+        }
+
+        self.status = if enabled {
+            "Speaker auto-mute enabled".to_string()
+        } else {
+            "Speaker auto-mute disabled".to_string()
+        };
+    }
+
     pub(crate) fn popup_opened(&mut self) {
         self.poll_recorder_error();
 
@@ -151,6 +179,7 @@ impl Session {
                 self.state = State::Recording;
                 self.status = "Listening for speech".to_string();
                 self.popup_recording_active = true;
+                let _ = self.mute_speakers_for_recording();
             }
             Err(error) => self.set_error(error),
         }
@@ -166,6 +195,7 @@ impl Session {
         self.popup_recording_active = false;
 
         if self.state != State::Recording {
+            self.restore_speakers_after_recording();
             return;
         }
 
@@ -174,7 +204,10 @@ impl Session {
             return;
         };
 
-        match recorder.stop() {
+        let stop_result = recorder.stop();
+        self.restore_speakers_after_recording();
+
+        match stop_result {
             Ok(recording) => {
                 if recording.is_shorter_than(MIN_RECORDING_DURATION) {
                     self.state = State::Idle;
@@ -271,6 +304,7 @@ impl Session {
 
         self.popup_recording_active = false;
         let stop_result = self.recorder.as_ref().map(AudioRecorder::stop);
+        self.restore_speakers_after_recording();
         match stop_result {
             Some(Ok(_recording)) => {
                 if self.state == State::Recording {
@@ -320,10 +354,38 @@ impl Session {
         {
             let _ = recorder.stop();
         }
+        self.restore_speakers_after_recording();
 
         self.state = State::Error;
         self.status = error.to_string();
         self.popup_recording_active = false;
+    }
+
+    fn mute_speakers_for_recording(&mut self) -> bool {
+        if !self.model_config.auto_mute_speakers() || self.speaker_mute.is_some() {
+            return true;
+        }
+
+        match SpeakerMuteGuard::mute_default_sink() {
+            Ok(guard) => {
+                self.speaker_mute = Some(guard);
+                true
+            }
+            Err(error) => {
+                self.status = format!("Listening for speech; speaker auto-mute failed: {error}");
+                false
+            }
+        }
+    }
+
+    fn restore_speakers_after_recording(&mut self) {
+        let Some(mut speaker_mute) = self.speaker_mute.take() else {
+            return;
+        };
+
+        if let Err(error) = speaker_mute.restore() {
+            self.status = format!("Speaker auto-mute restore failed: {error}");
+        }
     }
 
     fn start_worker(&mut self) {

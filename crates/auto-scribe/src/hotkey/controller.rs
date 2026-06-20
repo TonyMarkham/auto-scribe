@@ -66,6 +66,7 @@ impl Controller {
             stt_model_download_file_label: stt.model_download_file_label,
             stt_model_dir: stt.model_dir,
             stt_config_path: stt.config_path,
+            stt_auto_mute_speakers: stt.auto_mute_speakers,
         }
     }
 
@@ -122,6 +123,11 @@ impl Controller {
 
     pub(crate) fn download_model(&mut self, cx: &mut Context<Self>) {
         self.stt.start_model_download();
+        cx.notify();
+    }
+
+    pub(crate) fn set_auto_mute_speakers(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        self.stt.set_auto_mute_speakers(enabled);
         cx.notify();
     }
 

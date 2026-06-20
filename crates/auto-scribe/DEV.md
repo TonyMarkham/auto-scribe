@@ -33,9 +33,14 @@ On startup, `ModelConfig::load` creates `config.toml` if it is missing. The defa
 [model]
 directory = "models/nemotron-speech-streaming-en-0.6b"
 base_url = "https://huggingface.co/altunenes/parakeet-rs/resolve/main/nemotron-speech-streaming-en-0.6b"
+
+[audio]
+auto_mute_speakers = false
 ```
 
 Relative model directories resolve under the app data directory. `NEMOTRON_MODEL_DIR` overrides the configured model directory.
+
+When `auto_mute_speakers` is enabled, `Session` uses `SpeakerMuteGuard` to mute the default output sink while recording. The guard tries `wpctl` first, falls back to `pactl`, and restores the previous mute state on release, error, shutdown, or drop.
 
 The required files are:
 

@@ -14,4 +14,5 @@ pub(crate) struct Snapshot {
     pub(crate) model_download_file_label: String,
     pub(crate) model_dir: String,
     pub(crate) config_path: String,
+    pub(crate) auto_mute_speakers: bool,
 }

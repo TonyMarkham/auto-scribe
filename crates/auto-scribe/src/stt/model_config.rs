@@ -10,6 +10,7 @@ pub(crate) struct ModelConfig {
     config_path: PathBuf,
     model_dir: PathBuf,
     model_base_url: String,
+    auto_mute_speakers: bool,
 }
 
 impl ModelConfig {
@@ -26,12 +27,7 @@ impl ModelConfig {
             })?;
         }
 
-        let config_text = fs::read_to_string(&config_path).map_err(|error| {
-            SttError::model_path(format!("read {}: {error}", config_path.display()))
-        })?;
-        let parsed = config_text.parse::<toml::Table>().map_err(|error| {
-            SttError::model_path(format!("parse {}: {error}", config_path.display()))
-        })?;
+        let parsed = read_config_table(&config_path)?;
 
         let model_table = parsed.get("model").and_then(toml::Value::as_table);
         let configured_dir = model_table
@@ -48,6 +44,11 @@ impl ModelConfig {
             .map(PathBuf::from)
             .unwrap_or(configured_model_dir);
         let model_base_url = configured_base_url.trim_end_matches('/').to_string();
+        let audio_table = parsed.get("audio").and_then(toml::Value::as_table);
+        let auto_mute_speakers = audio_table
+            .and_then(|table| table.get("auto_mute_speakers"))
+            .and_then(toml::Value::as_bool)
+            .unwrap_or(false);
 
         if model_base_url.is_empty() {
             return Err(SttError::model_path(
@@ -59,6 +60,7 @@ impl ModelConfig {
             config_path,
             model_dir,
             model_base_url,
+            auto_mute_speakers,
         })
     }
 
@@ -72,6 +74,51 @@ impl ModelConfig {
 
     pub(crate) fn model_url(&self, file_name: &str) -> String {
         format!("{}/{}", self.model_base_url, file_name)
+    }
+
+    pub(crate) fn auto_mute_speakers(&self) -> bool {
+        self.auto_mute_speakers
+    }
+
+    pub(crate) fn set_auto_mute_speakers(&mut self, enabled: bool) -> SttResult<()> {
+        let mut parsed = read_config_table(&self.config_path)?;
+        upsert_audio_auto_mute(&mut parsed, enabled);
+        let config_text = toml::to_string_pretty(&parsed).map_err(|error| {
+            SttError::model_path(format!("serialize {}: {error}", self.config_path.display()))
+        })?;
+
+        fs::write(&self.config_path, config_text).map_err(|error| {
+            SttError::model_path(format!("write {}: {error}", self.config_path.display()))
+        })?;
+        self.auto_mute_speakers = enabled;
+        Ok(())
+    }
+}
+
+fn read_config_table(config_path: &Path) -> SttResult<toml::Table> {
+    let config_text = fs::read_to_string(config_path).map_err(|error| {
+        SttError::model_path(format!("read {}: {error}", config_path.display()))
+    })?;
+
+    config_text
+        .parse::<toml::Table>()
+        .map_err(|error| SttError::model_path(format!("parse {}: {error}", config_path.display())))
+}
+
+fn upsert_audio_auto_mute(parsed: &mut toml::Table, enabled: bool) {
+    let audio = parsed
+        .entry("audio".to_string())
+        .or_insert_with(|| toml::Value::Table(toml::Table::new()));
+
+    if !audio.is_table() {
+        *audio = toml::Value::Table(toml::Table::new());
+    }
+
+    if let Some(audio_table) = audio.as_table_mut() {
+        audio_table.insert(
+            "auto_mute_speakers".to_string(),
+            toml::Value::Boolean(enabled),
+        );
     }
 }
 
@@ -123,6 +170,9 @@ fn default_config_text() -> String {
 [model]
 directory = "{DEFAULT_MODEL_DIRECTORY}"
 base_url = "{DEFAULT_MODEL_BASE_URL}"
+
+[audio]
+auto_mute_speakers = false
 "#
     )
 }

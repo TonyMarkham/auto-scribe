@@ -15,6 +15,7 @@ use gpui_component::{
     button::{Button, ButtonVariants},
     h_flex,
     progress::Progress,
+    switch::Switch,
     v_flex,
 };
 
@@ -103,6 +104,7 @@ impl Render for MainWindow {
                             "unavailable"
                         },
                     ))
+                    .child(self.auto_mute_control(&snapshot, cx))
                     .child(model_download_control)
                     .child(
                         div()
@@ -134,6 +136,40 @@ impl Render for MainWindow {
 }
 
 impl MainWindow {
+    fn auto_mute_control(
+        &self,
+        snapshot: &crate::hotkey::Snapshot,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        let controller = self.controller.clone();
+
+        h_flex()
+            .w_full()
+            .items_center()
+            .justify_between()
+            .gap_3()
+            .border_1()
+            .border_color(rgb(0x334155))
+            .rounded_md()
+            .px_3()
+            .py_2()
+            .child(
+                div()
+                    .text_sm()
+                    .text_color(rgb(0x94a3b8))
+                    .child("Auto-Mute Speakers"),
+            )
+            .child(
+                Switch::new("auto-mute-speakers")
+                    .checked(snapshot.stt_auto_mute_speakers)
+                    .on_click(move |enabled, _, cx| {
+                        controller.update(cx, |controller, cx| {
+                            controller.set_auto_mute_speakers(*enabled, cx);
+                        });
+                    }),
+            )
+    }
+
     fn model_download_control(
         &self,
         snapshot: &crate::hotkey::Snapshot,

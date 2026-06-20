@@ -40,6 +40,12 @@ pub(crate) enum SttError {
         location: ErrorLocation,
     },
 
+    #[error("speaker mute error: {message} {location}")]
+    SpeakerMute {
+        message: String,
+        location: ErrorLocation,
+    },
+
     #[error("worker channel error: {message} {location}")]
     WorkerChannel {
         message: String,
@@ -91,6 +97,14 @@ impl SttError {
     #[track_caller]
     pub(crate) fn speech_to_text(message: impl Into<String>) -> Self {
         Self::SpeechToText {
+            message: message.into(),
+            location: ErrorLocation::from(Location::caller()),
+        }
+    }
+
+    #[track_caller]
+    pub(crate) fn speaker_mute(message: impl Into<String>) -> Self {
+        Self::SpeakerMute {
             message: message.into(),
             location: ErrorLocation::from(Location::caller()),
         }
