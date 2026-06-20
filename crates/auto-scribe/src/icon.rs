@@ -7,17 +7,17 @@ use std::{env, fs, io, path::PathBuf};
 use crate::error::{AppError, AppResult, ResultContext};
 use image::{DynamicImage, ImageFormat, Rgba, RgbaImage, imageops::FilterType};
 
-pub(crate) const APP_ID: &str = "dev.gpui.HotkeyHoldApp";
+pub(crate) const APP_ID: &str = "dev.gpui.AutoScribe";
 
 const ICON_SIZE: u32 = 64;
 #[cfg(target_os = "linux")]
 const DESKTOP_ICON_SIZE: u32 = 512;
 #[cfg(target_os = "linux")]
-const DESKTOP_FILE_NAME: &str = "dev.gpui.HotkeyHoldApp.desktop";
+const DESKTOP_FILE_NAME: &str = "dev.gpui.AutoScribe.desktop";
 #[cfg(target_os = "linux")]
-const DESKTOP_ENTRY: &str = include_str!("../data/dev.gpui.HotkeyHoldApp.desktop");
+const DESKTOP_ENTRY: &str = include_str!("../data/dev.gpui.AutoScribe.desktop");
 #[cfg(target_os = "linux")]
-const PNG_ICON_FILE_NAME: &str = "dev.gpui.HotkeyHoldApp.png";
+const PNG_ICON_FILE_NAME: &str = "dev.gpui.AutoScribe.png";
 
 static WINDOW_ICON: LazyLock<Arc<RgbaImage>> = LazyLock::new(|| Arc::new(build_window_icon()));
 
@@ -33,11 +33,11 @@ pub(crate) fn ensure_desktop_entry() -> AppResult<PathBuf> {
     let desktop_entry_path = applications_dir.join(DESKTOP_FILE_NAME);
     let desktop_entry = DESKTOP_ENTRY
         .replace(
-            "Exec=hotkey-hold-app",
+            "Exec=auto-scribe",
             &format!("Exec={}", desktop_exec_value()?),
         )
         .replace(
-            "Icon=dev.gpui.HotkeyHoldApp",
+            "Icon=dev.gpui.AutoScribe",
             &format!("Icon={}", icon_path.to_string_lossy()),
         );
 

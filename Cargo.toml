@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/hotkey-hold-app",
+    "crates/auto-scribe",
     "crates/wip"
 ]
 exclude = [

@@ -1,4 +1,4 @@
-# Hotkey Hold App
+# Auto Scribe
 
 A small GPUI app that shows an overlay while `Ctrl+Alt+Space` is held.
 
@@ -9,7 +9,7 @@ The main window shows the active backend, current hotkey state, overlay state, a
 From the workspace root:
 
 ```bash
-cargo run -p hotkey-hold-app
+cargo run -p auto-scribe
 ```
 
 On first launch under Wayland, the desktop portal may show a dialog that looks like it is asking to add a new shortcut. Approve that dialog. It is authorizing this app to use `Ctrl+Alt+Space`; it is not asking you to choose a different shortcut.
@@ -32,16 +32,16 @@ On Wayland, the app automatically installs or updates the required per-user desk
 The generated runtime file is written to:
 
 ```text
-$XDG_DATA_HOME/applications/dev.gpui.HotkeyHoldApp.desktop
+$XDG_DATA_HOME/applications/dev.gpui.AutoScribe.desktop
 ```
 
 If `XDG_DATA_HOME` is not set, it uses:
 
 ```text
-~/.local/share/applications/dev.gpui.HotkeyHoldApp.desktop
+~/.local/share/applications/dev.gpui.AutoScribe.desktop
 ```
 
-The desktop entry is required because the portal registers host apps by desktop app ID. The app ID is `dev.gpui.HotkeyHoldApp`, matching `dev.gpui.HotkeyHoldApp.desktop`.
+The desktop entry is required because the portal registers host apps by desktop app ID. The app ID is `dev.gpui.AutoScribe`, matching `dev.gpui.AutoScribe.desktop`.
 
 ## Troubleshooting
 
@@ -56,7 +56,7 @@ If the shortcut does nothing after a rebuild, restart the app so the generated d
 The checked-in desktop template is:
 
 ```text
-crates/hotkey-hold-app/data/dev.gpui.HotkeyHoldApp.desktop
+crates/auto-scribe/data/dev.gpui.AutoScribe.desktop
 ```
 
-Runtime development builds use this template and replace `Exec=hotkey-hold-app` with the current executable path. A packaged install should install the same desktop file under the system or user applications directory with the packaged executable path.
+Runtime development builds use this template and replace `Exec=auto-scribe` with the current executable path. A packaged install should install the same desktop file under the system or user applications directory with the packaged executable path.

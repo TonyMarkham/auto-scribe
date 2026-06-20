@@ -54,7 +54,7 @@ impl Render for MainWindow {
                     .p_6()
                     .border_t_1()
                     .border_color(cx.theme().border)
-                    .child(div().text_2xl().font_semibold().child("Global Hotkey Hold"))
+                    .child(div().text_2xl().font_semibold().child("Auto Scribe"))
                     .child(
                         div()
                             .text_sm()

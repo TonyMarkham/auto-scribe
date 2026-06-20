@@ -1,5 +1,5 @@
 [package]
-name = "hotkey-hold-app"
+name = "auto-scribe"
 version.workspace = true
 edition.workspace = true
 
@@ -8,7 +8,7 @@ default = ["wayland"]
 wayland = ["gpui/wayland"]
 
 [[bin]]
-name = "hotkey-hold-app"
+name = "auto-scribe"
 path = "src/main.rs"
 
 [dependencies]

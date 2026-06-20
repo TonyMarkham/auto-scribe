@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Hotkey Hold App
+Name=Auto Scribe
 Comment=Show a hold overlay while the global shortcut is pressed
-Exec=hotkey-hold-app
-Icon=dev.gpui.HotkeyHoldApp
+Exec=auto-scribe
+Icon=dev.gpui.AutoScribe
 Terminal=false
 NoDisplay=true
 Categories=Utility;
-StartupWMClass=dev.gpui.HotkeyHoldApp
+StartupWMClass=dev.gpui.AutoScribe

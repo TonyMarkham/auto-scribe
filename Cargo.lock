@@ -708,6 +708,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "auto-scribe"
+version = "0.1.0"
+dependencies = [
+ "ashpd",
+ "async-channel",
+ "cpal",
+ "error-location",
+ "futures-util",
+ "global-hotkey",
+ "gpui",
+ "gpui-component",
+ "gpui-component-assets",
+ "gpui_platform",
+ "image",
+ "parakeet-rs",
+ "pollster 0.4.0",
+ "rubato",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3452,27 +3473,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
 dependencies = [
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "hotkey-hold-app"
-version = "0.1.0"
-dependencies = [
- "ashpd",
- "async-channel",
- "cpal",
- "error-location",
- "futures-util",
- "global-hotkey",
- "gpui",
- "gpui-component",
- "gpui-component-assets",
- "gpui_platform",
- "image",
- "parakeet-rs",
- "pollster 0.4.0",
- "rubato",
- "thiserror 2.0.18",
 ]
 
 [[package]]

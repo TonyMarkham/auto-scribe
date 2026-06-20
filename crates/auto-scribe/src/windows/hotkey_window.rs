@@ -204,7 +204,7 @@ fn hotkey_window_options(kind: WindowKind, placement: HotkeyWindowPlacement) -> 
 #[cfg(all(target_os = "linux", feature = "wayland"))]
 fn layer_shell_window_kind(margin: (Pixels, Pixels, Pixels, Pixels)) -> WindowKind {
     WindowKind::LayerShell(LayerShellOptions {
-        namespace: "hotkey-hold-overlay".to_string(),
+        namespace: "auto-scribe-overlay".to_string(),
         layer: Layer::Overlay,
         anchor: Anchor::BOTTOM | Anchor::LEFT,
         margin: Some(margin),

@@ -1,11 +1,11 @@
-# Hotkey Hold App Dev Notes
+# Auto Scribe Dev Notes
 
 ## Commands
 
 From the workspace root:
 
 ```bash
-cargo run -p hotkey-hold-app
+cargo run -p auto-scribe
 cargo fmt --all -- --check
 cargo check --workspace --all-targets --offline
 cargo clippy --workspace --all-targets --offline
@@ -17,7 +17,7 @@ cargo clippy --workspace --all-targets --offline
 - `src/hotkey.rs` owns backend selection, hotkey runtime setup, runtime event dispatch, and overlay lifecycle state.
 - `src/windows/main_window.rs` renders the status window.
 - `src/windows/hotkey_window.rs` renders the hold overlay.
-- `data/dev.gpui.HotkeyHoldApp.desktop` is the desktop entry template used by the Wayland portal path and by packaging.
+- `data/dev.gpui.AutoScribe.desktop` is the desktop entry template used by the Wayland portal path and by packaging.
 
 ## Backend Selection
 
@@ -54,13 +54,13 @@ Startup sequence:
 
 1. Install or update the per-user desktop entry.
 2. Open a dedicated session bus connection.
-3. Parse and register app ID `dev.gpui.HotkeyHoldApp`.
+3. Parse and register app ID `dev.gpui.AutoScribe`.
 4. Create a GlobalShortcuts session.
 5. Bind `hold-overlay` with preferred trigger `CTRL+ALT+space`.
 6. Subscribe to `Activated` and `Deactivated` portal signals.
 7. Map those signals to `HotkeyEvent::Pressed` and `HotkeyEvent::Released`.
 
-The desktop entry is written to `$XDG_DATA_HOME/applications/dev.gpui.HotkeyHoldApp.desktop`, or to `~/.local/share/applications/dev.gpui.HotkeyHoldApp.desktop` when `XDG_DATA_HOME` is unset.
+The desktop entry is written to `$XDG_DATA_HOME/applications/dev.gpui.AutoScribe.desktop`, or to `~/.local/share/applications/dev.gpui.AutoScribe.desktop` when `XDG_DATA_HOME` is unset.
 
 Host app registration is bounded by `HOST_APP_REGISTRATION_TIMEOUT` so an unresponsive portal does not block startup forever.
 
@@ -98,8 +98,8 @@ Keeping the overlay alive creates one shutdown edge case: after the overlay has 
 
 There are two desktop file locations:
 
-- `data/dev.gpui.HotkeyHoldApp.desktop` is the checked-in template.
-- `$XDG_DATA_HOME/applications/dev.gpui.HotkeyHoldApp.desktop`, or `~/.local/share/applications/dev.gpui.HotkeyHoldApp.desktop`, is the generated runtime copy used by the portal.
+- `data/dev.gpui.AutoScribe.desktop` is the checked-in template.
+- `$XDG_DATA_HOME/applications/dev.gpui.AutoScribe.desktop`, or `~/.local/share/applications/dev.gpui.AutoScribe.desktop`, is the generated runtime copy used by the portal.
 
 The app writes the runtime copy automatically on Wayland startup. Users should not have to create it manually.
 
@@ -108,7 +108,7 @@ The template is included with `include_str!`.
 For development runs, `ensure_desktop_entry` creates the user applications directory if needed, then replaces:
 
 ```text
-Exec=hotkey-hold-app
+Exec=auto-scribe
 ```
 
 with the current executable path from `env::current_exe()`.
@@ -116,8 +116,8 @@ with the current executable path from `env::current_exe()`.
 The desktop filename and app ID must stay aligned:
 
 ```text
-dev.gpui.HotkeyHoldApp.desktop
-dev.gpui.HotkeyHoldApp
+dev.gpui.AutoScribe.desktop
+dev.gpui.AutoScribe
 ```
 
 Changing either value requires updating the other and retesting portal registration.

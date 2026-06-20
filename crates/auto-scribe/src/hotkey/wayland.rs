@@ -29,7 +29,7 @@ use std::{
 };
 
 #[cfg(target_os = "linux")]
-const WAYLAND_DESKTOP_FILE_NAME: &str = "dev.gpui.HotkeyHoldApp.desktop";
+const WAYLAND_DESKTOP_FILE_NAME: &str = "dev.gpui.AutoScribe.desktop";
 #[cfg(target_os = "linux")]
 const HOST_APP_REGISTRATION_TIMEOUT: Duration = Duration::from_secs(5);
 

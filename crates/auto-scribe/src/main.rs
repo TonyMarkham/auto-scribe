@@ -19,7 +19,7 @@ use crate::{
 use gpui::{App, AppContext, Pixels, WindowBounds, px, size};
 use gpui_component_assets::Assets as GpuiComponentAssets;
 
-const WINDOW_TITLE: &str = "Hotkey Hold App";
+const WINDOW_TITLE: &str = "Auto Scribe";
 const RESIZE_EDGE_SIZE: Pixels = px(6.0);
 const RESIZE_CORNER_SIZE: Pixels = px(14.0);
 const DEFAULT_START_WIDTH: f32 = 520.0;
