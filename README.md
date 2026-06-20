@@ -12,6 +12,30 @@ From the workspace root:
 cargo run -p auto-scribe
 ```
 
+### Detached Shell Alias
+
+If the release binary has been published to `~/.local/share/auto-scribe/bin/auto-scribe`, add this block to `~/.bashrc`:
+
+```bash
+# >>> Auto Scribe >>>
+alias auto-scribe='setsid -f "${HOME}/.local/share/auto-scribe/bin/auto-scribe" >/tmp/auto-scribe.log 2>&1 </dev/null'
+# <<< Auto Scribe <<<
+```
+
+Reload the shell config:
+
+```bash
+source ~/.bashrc
+```
+
+Then launch Auto Scribe from any terminal:
+
+```bash
+auto-scribe
+```
+
+The alias uses `setsid -f` so the app keeps running after the terminal closes. stdout and stderr are written to `/tmp/auto-scribe.log`.
+
 On first launch under Wayland, the desktop portal may show a dialog that looks like it is asking to add a new shortcut. Approve that dialog. It is authorizing this app to use `Ctrl+Alt+Space`; it is not asking you to choose a different shortcut.
 
 On first launch without local model files, the main window shows a download button. The button downloads the required Nemotron ONNX files into the Auto Scribe app data directory and is replaced by file-count and current-file progress bars while the download is running.
