@@ -104,7 +104,7 @@ use_gpu = true
 
 The current GPU path is CUDA-only. Apple Silicon, Radeon, and Intel Arc are not enabled by this toggle.
 
-For published release builds, run `just publish` after `cargo build --release`. The publish recipe copies the executable and the ONNX Runtime provider libraries into:
+For local development installs, run `just publish` after `cargo build --release`. The publish recipe copies the executable and the ONNX Runtime provider libraries into:
 
 ```text
 ~/.local/share/auto-scribe/bin/
@@ -157,6 +157,53 @@ If the shortcut does nothing after a rebuild, restart the app so the generated d
 Speaker auto-mute uses `wpctl` first and falls back to `pactl`. If neither command can control the default sink, dictation still runs and the STT status reports the auto-mute failure.
 
 ## Packaging
+
+Create the GitHub release archive with:
+
+```bash
+just package
+```
+
+The archive is written to:
+
+```text
+dist/auto-scribe-linux-x86_64-cuda.tar.gz
+```
+
+The standalone installer script is written to:
+
+```text
+dist/install-auto-scribe.sh
+```
+
+The archive contains:
+
+```text
+auto-scribe
+libonnxruntime*.so*
+install.sh
+README.md
+LICENSE
+```
+
+The bundled `install.sh` installs both the executable and ONNX Runtime provider `.so` files into:
+
+```text
+~/.local/share/auto-scribe/bin/
+```
+
+Install from an extracted release directory:
+
+```bash
+tar -xzf auto-scribe-linux-x86_64-cuda.tar.gz
+./auto-scribe-linux-x86_64-cuda/install.sh
+```
+
+Or pass the archive directly to the installer:
+
+```bash
+./install-auto-scribe.sh auto-scribe-linux-x86_64-cuda.tar.gz
+```
 
 The checked-in desktop template is:
 

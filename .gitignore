@@ -2,6 +2,7 @@
 target/
 bin/
 obj/
+dist/
 
 # Local generated state
 .local/
